@@ -70,6 +70,7 @@ export function getDashPattern(style: LineStyle, lineWidth: number): number[] {
 		case LineStyle.Dashed: return [2 * lineWidth, 2 * lineWidth];
 		case LineStyle.LargeDashed: return [6 * lineWidth, 6 * lineWidth];
 		case LineStyle.SparseDotted: return [lineWidth, 4 * lineWidth];
+		default: return [];
 	}
 }
 
