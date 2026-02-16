@@ -1066,10 +1066,13 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 		previousPane.removeDataSource(series);
 		const newPane = this._getOrCreatePane(newPaneIndex);
 		this._addSeriesToPane(series, newPane);
+		let paneWasRemoved = false;
 		if (previousPane.dataSources().length === 0) {
-			this._cleanupIfPaneIsEmpty(previousPane);
+			paneWasRemoved = this._cleanupIfPaneIsEmpty(previousPane);
 		}
-		this.fullUpdate();
+		if (!paneWasRemoved) {
+			this.fullUpdate();
+		}
 	}
 
 	public backgroundBottomColor(): string {
@@ -1206,9 +1209,13 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 		return layoutOptions.background.color;
 	}
 
-	private _cleanupIfPaneIsEmpty(pane: Pane): void {
+	private _cleanupIfPaneIsEmpty(pane: Pane): boolean {
 		if (!pane.preserveEmptyPane() && (pane.dataSources().length === 0 && this._panes.length > 1)) {
 			this._panes.splice(this.getPaneIndex(pane), 1);
+			this.fullUpdate();
+			return true;
 		}
+
+		return false;
 	}
 }
