@@ -29,11 +29,10 @@ export function drawSeriesPointMarkers<TItem extends LinePoint, TStyle extends C
 		if (point) {
 			const style = styleGetter(renderingScope, point);
 			if (style !== prevStyle) {
-				context.beginPath();
 				if (prevStyle !== null) {
 					context.fill();
 				}
-
+				context.beginPath();
 				context.fillStyle = style;
 				prevStyle = style;
 			}
