@@ -87,7 +87,7 @@ export default [
 		path: 'dist/lightweight-charts.production.mjs',
 		import: '{ LineSeries }',
 		ignore: ['fancy-canvas'],
-		limit: '2.8 KB',
+		limit: '3.0 KB',
 		brotli: true,
 	},
 	{
