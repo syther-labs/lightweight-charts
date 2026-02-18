@@ -63,17 +63,25 @@ export const enum LineStyle {
 	SparseDotted = 4,
 }
 
-export function setLineStyle(ctx: CanvasRenderingContext2D, style: LineStyle): void {
-	const dashPatterns = {
-		[LineStyle.Solid]: [],
-		[LineStyle.Dotted]: [ctx.lineWidth, ctx.lineWidth],
-		[LineStyle.Dashed]: [2 * ctx.lineWidth, 2 * ctx.lineWidth],
-		[LineStyle.LargeDashed]: [6 * ctx.lineWidth, 6 * ctx.lineWidth],
-		[LineStyle.SparseDotted]: [ctx.lineWidth, 4 * ctx.lineWidth],
-	};
+export function getDashPattern(style: LineStyle, lineWidth: number): number[] {
+	switch (style) {
+		case LineStyle.Solid: return [];
+		case LineStyle.Dotted: return [lineWidth, lineWidth];
+		case LineStyle.Dashed: return [2 * lineWidth, 2 * lineWidth];
+		case LineStyle.LargeDashed: return [6 * lineWidth, 6 * lineWidth];
+		case LineStyle.SparseDotted: return [lineWidth, 4 * lineWidth];
+		default: return [];
+	}
+}
 
-	const dashPattern = dashPatterns[style];
+export function getDashPatternLength(dashPattern: number[]): number {
+	return dashPattern.reduce((sum: number, val: number) => sum + val, 0);
+}
+
+export function setLineStyle(ctx: CanvasRenderingContext2D, style: LineStyle): number[] {
+	const dashPattern = getDashPattern(style, ctx.lineWidth);
 	ctx.setLineDash(dashPattern);
+	return dashPattern;
 }
 
 export function drawHorizontalLine(ctx: CanvasRenderingContext2D, y: number, left: number, right: number): void {

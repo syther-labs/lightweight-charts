@@ -5,6 +5,10 @@ import { SeriesItemsIndexesRange } from '../model/time-data';
 
 import { LinePoint, LineType } from './draw-line';
 
+function distanceByCoordinates(p1x: number, p1y: number, p2x: number, p2y: number): number {
+	return Math.hypot(p2x - p1x, p2y - p1y);
+}
+
 // eslint-disable-next-line max-params, complexity
 export function walkLine<TItem extends LinePoint, TStyle extends CanvasRenderingContext2D['fillStyle' | 'strokeStyle']>(
 	renderingScope: BitmapCoordinatesRenderingScope,
@@ -15,7 +19,8 @@ export function walkLine<TItem extends LinePoint, TStyle extends CanvasRendering
 	// the values returned by styleGetter are compared using the operator !==,
 	// so if styleGetter returns objects, then styleGetter should return the same object for equal styles
 	styleGetter: (renderingScope: BitmapCoordinatesRenderingScope, item: TItem) => TStyle,
-	finishStyledArea: (renderingScope: BitmapCoordinatesRenderingScope, style: TStyle, areaFirstItem: LinePoint, newAreaFirstItem: LinePoint) => void
+	finishStyledArea: (renderingScope: BitmapCoordinatesRenderingScope, style: TStyle, areaFirstItem: LinePoint, newAreaFirstItem: LinePoint) => void,
+	dashPatternLength: number = 0
 ): void {
 	if (items.length === 0 || visibleRange.from >= items.length || visibleRange.to <= 0) {
 		return;
@@ -40,12 +45,22 @@ export function walkLine<TItem extends LinePoint, TStyle extends CanvasRendering
 
 		finishStyledArea(renderingScope, currentStyle, item1, item2);
 	} else {
+		const shouldTrackDashOffset = dashPatternLength > 0;
+		let accumulatedDistance = 0;
+
 		const changeStyle = (newStyle: TStyle, currentItem: TItem) => {
 			finishStyledArea(renderingScope, currentStyle, currentStyleFirstItem, currentItem);
 
 			ctx.beginPath();
 			currentStyle = newStyle;
 			currentStyleFirstItem = currentItem;
+
+			if (shouldTrackDashOffset) {
+				const offset = accumulatedDistance % dashPatternLength;
+				ctx.lineDashOffset = offset;
+				// reset to the remainder to avoid floating-point precision drift over very long series.
+				accumulatedDistance = offset;
+			}
 		};
 
 		let currentItem = currentStyleFirstItem;
@@ -55,44 +70,81 @@ export function walkLine<TItem extends LinePoint, TStyle extends CanvasRendering
 
 		for (let i = visibleRange.from + 1; i < visibleRange.to; ++i) {
 			currentItem = items[i];
+			const currentX = currentItem.x * horizontalPixelRatio;
+			const currentY = currentItem.y * verticalPixelRatio;
 			const itemStyle = styleGetter(renderingScope, currentItem);
 
 			switch (lineType) {
-				case LineType.Simple:
-					ctx.lineTo(currentItem.x * horizontalPixelRatio, currentItem.y * verticalPixelRatio);
+				case LineType.Simple: {
+					ctx.lineTo(currentX, currentY);
+					if (shouldTrackDashOffset) {
+						const prevItem = items[i - 1];
+						const prevX = prevItem.x * horizontalPixelRatio;
+						const prevY = prevItem.y * verticalPixelRatio;
+						accumulatedDistance += distanceByCoordinates(prevX, prevY, currentX, currentY);
+					}
 					break;
-				case LineType.WithSteps:
-					ctx.lineTo(currentItem.x * horizontalPixelRatio, items[i - 1].y * verticalPixelRatio);
+				}
+				case LineType.WithSteps: {
+					const prevItem = items[i - 1];
+					const prevY = prevItem.y * verticalPixelRatio;
+					ctx.lineTo(currentX, prevY);
+					if (shouldTrackDashOffset) {
+						accumulatedDistance += Math.abs(currentItem.x - prevItem.x) * horizontalPixelRatio;
+					}
 
 					if (itemStyle !== currentStyle) {
 						changeStyle(itemStyle, currentItem);
-						ctx.lineTo(currentItem.x * horizontalPixelRatio, items[i - 1].y * verticalPixelRatio);
+						ctx.lineTo(currentX, prevY);
 					}
 
-					ctx.lineTo(currentItem.x * horizontalPixelRatio, currentItem.y * verticalPixelRatio);
+					ctx.lineTo(currentX, currentY);
+					if (shouldTrackDashOffset) {
+						accumulatedDistance += Math.abs(currentItem.y - prevItem.y) * verticalPixelRatio;
+					}
 					break;
+				}
 				case LineType.Curved: {
 					const [cp1, cp2] = getControlPoints(items, i - 1, i);
+					const cp1x = cp1.x * horizontalPixelRatio;
+					const cp1y = cp1.y * verticalPixelRatio;
+					const cp2x = cp2.x * horizontalPixelRatio;
+					const cp2y = cp2.y * verticalPixelRatio;
 					ctx.bezierCurveTo(
-						cp1.x * horizontalPixelRatio,
-						cp1.y * verticalPixelRatio,
-						cp2.x * horizontalPixelRatio,
-						cp2.y * verticalPixelRatio,
-						currentItem.x * horizontalPixelRatio,
-						currentItem.y * verticalPixelRatio
+						cp1x,
+						cp1y,
+						cp2x,
+						cp2y,
+						currentX,
+						currentY
 					);
+
+					if (shouldTrackDashOffset) {
+						const prevItem = items[i - 1];
+						const prevX = prevItem.x * horizontalPixelRatio;
+						const prevY = prevItem.y * verticalPixelRatio;
+						const chord = distanceByCoordinates(prevX, prevY, currentX, currentY);
+						const controlPolygon = distanceByCoordinates(prevX, prevY, cp1x, cp1y) +
+							distanceByCoordinates(cp1x, cp1y, cp2x, cp2y) +
+							distanceByCoordinates(cp2x, cp2y, currentX, currentY);
+						accumulatedDistance += (chord + controlPolygon) / 2;
+					}
 					break;
 				}
 			}
 
 			if (lineType !== LineType.WithSteps && itemStyle !== currentStyle) {
 				changeStyle(itemStyle, currentItem);
-				ctx.moveTo(currentItem.x * horizontalPixelRatio, currentItem.y * verticalPixelRatio);
+				ctx.moveTo(currentX, currentY);
 			}
 		}
 
 		if (currentStyleFirstItem !== currentItem || currentStyleFirstItem === currentItem && lineType === LineType.WithSteps) {
 			finishStyledArea(renderingScope, currentStyle, currentStyleFirstItem, currentItem);
+		}
+
+		if (shouldTrackDashOffset) {
+			ctx.lineDashOffset = 0;
 		}
 	}
 }

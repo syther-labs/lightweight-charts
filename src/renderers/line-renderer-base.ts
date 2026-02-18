@@ -4,7 +4,7 @@ import { PricedValue } from '../model/price-scale';
 import { SeriesItemsIndexesRange, TimedValue } from '../model/time-data';
 
 import { BitmapCoordinatesPaneRenderer } from './bitmap-coordinates-pane-renderer';
-import { LinePoint, LineStyle, LineType, LineWidth, setLineStyle } from './draw-line';
+import { getDashPatternLength, LinePoint, LineStyle, LineType, LineWidth, setLineStyle } from './draw-line';
 import { drawSeriesPointMarkers } from './draw-series-point-markers';
 import { walkLine } from './walk-line';
 
@@ -54,14 +54,16 @@ export abstract class PaneRendererLineBase<TData extends PaneRendererLineDataBas
 		ctx.lineCap = 'butt';
 		ctx.lineWidth = lineWidth * renderingScope.verticalPixelRatio;
 
-		setLineStyle(ctx, lineStyle);
+		const dashPattern = setLineStyle(ctx, lineStyle);
 
 		ctx.lineJoin = 'round';
 
 		const styleGetter = this._strokeStyle.bind(this);
 
+		const dashPatternLength = getDashPatternLength(dashPattern);
+
 		if (lineType !== undefined) {
-			walkLine(renderingScope, items, lineType, visibleRange, barWidth, styleGetter, finishStyledArea);
+			walkLine(renderingScope, items, lineType, visibleRange, barWidth, styleGetter, finishStyledArea, dashPatternLength);
 		}
 
 		if (pointMarkersRadius) {
