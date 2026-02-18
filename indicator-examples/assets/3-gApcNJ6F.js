@@ -1,0 +1,1 @@
+import{q as t,g as r,D as i,e as s,h as c}from"./sample-data-DY_WE15M.js";import{c as n}from"./average-price-calculation-yjpPmBih.js";const o={autoSize:!0},e=t("chart",o),a=r(150,new Date(2024,0,1)),l=e.addSeries(i,{});l.setData(a);const d=n(a,{}),D=e.addSeries(s,{color:"black",lineWidth:2,lineStyle:c.Solid});D.setData(d);e.timeScale().fitContent();
