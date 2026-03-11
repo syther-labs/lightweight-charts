@@ -111,10 +111,10 @@ export interface ITimeScaleApi<HorzScaleItem> {
 	coordinateToLogical(x: number): Logical | null;
 
 	/**
-	 * Converts a time to local x coordinate.
+	 * Converts time to index.
 	 *
 	 * @param time - Time needs to be converted
-	 * @returns X coordinate of that time or `null` if no time found on time scale
+	 * @returns Index of that time or `null` if no time found on time scale
 	 */
 	timeToIndex(time: HorzScaleItem, findNearest?: boolean): TimePointIndex | null;
 
