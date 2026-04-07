@@ -2,10 +2,6 @@ function interactionsToPerform() {
 	return [];
 }
 
-function priceFormatter(price) {
-	return '£' + price.toFixed(2);
-}
-
 let mainSeries;
 
 function beforeInteractions(container) {
@@ -13,13 +9,15 @@ function beforeInteractions(container) {
 
 	mainSeries = chart.addSeries(LightweightCharts.LineSeries, {
 		priceFormat: {
-			type: 'custom',
-			minMove: 0.02,
-			formatter: priceFormatter,
+			type: 'price',
+			minMove: 0.25,
+			precision: undefined,
 		},
 	});
 
 	mainSeries.setData(generateLineData());
+	mainSeries.priceFormatter().format(1.25);
+	mainSeries.priceFormatter().format(1.5);
 
 	const overlaySeries = chart.addSeries(LightweightCharts.AreaSeries, {
 		priceScaleId: 'overlay-id',
@@ -45,10 +43,22 @@ function afterInteractions() {
 	mainSeries.applyOptions({
 		priceFormat: {
 			type: 'price',
+			minMove: 0.125,
+			precision: undefined,
+		},
+	});
+	mainSeries.priceFormatter().format(1.125);
+	mainSeries.priceFormatter().format(1.375);
+
+	mainSeries.applyOptions({
+		priceFormat: {
+			type: 'price',
 			minMove: 1,
 			precision: undefined,
 		},
 	});
+	mainSeries.priceFormatter().format(2);
+
 	return new Promise(resolve => {
 		requestAnimationFrame(resolve);
 	});
