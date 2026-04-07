@@ -34,13 +34,14 @@ function itemTypeFromCandidate(source: IPrimitiveHitTestSource, candidate: Inter
 	}
 
 	if (source instanceof Series) {
-		if (source.seriesType() === 'Custom') {
-			return 'custom';
-		}
-		// Built-in series pane-view hit tests never set externalId;
-		// only price-line renderer hits (horizontal-line-renderer) do.
+		// Pane-view series hits never tag themselves as price lines; the
+		// horizontal-line renderer path does so via `externalId`, including
+		// custom-series price lines.
 		if (candidate.externalId !== undefined) {
 			return 'price-line';
+		}
+		if (source.seriesType() === 'Custom') {
+			return 'custom';
 		}
 		switch (candidate.priority) {
 			case HitTestPriority.Point:

@@ -1,7 +1,11 @@
 import type { HoveredItemType } from './chart-model';
 
 /**
- * Internal hit-test priority used to break ties between overlapping candidates.
+ * Internal hit-test priority used for hover arbitration.
+ *
+ * Point hits receive a special override over non-point hits. Otherwise distance
+ * decides, and equal-distance non-point ties preserve the existing visual/source
+ * order instead of preferring a higher numeric priority.
  */
 export enum HitTestPriority {
 	/**
@@ -120,6 +124,7 @@ export function isBetterHit(candidate: InternalHitTestCandidate, currentBest: In
 		return candidate.distance < currentBest.distance;
 	}
 
-	// return candidate.priority > currentBest.priority;
+	// Preserve the existing draw/source order for equal-distance non-point ties.
+	// This prevents hidden strokes from overtaking visually covering range hits.
 	return false;
 }

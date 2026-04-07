@@ -95,6 +95,10 @@ export interface PrimitiveHoveredItem {
 	 * - `0` for range-style hits such as covered regions
 	 * - `1` for line-style hits such as strokes
 	 * - `2` for point-style hits such as explicit markers
+	 *
+	 * Point-style hits receive special precedence over non-point hits. Otherwise
+	 * distance decides, and equal-distance non-point ties preserve the existing
+	 * visual/source order.
 	 */
 	hitTestPriority?: number;
 	/**
