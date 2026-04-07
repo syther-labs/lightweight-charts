@@ -1,11 +1,14 @@
 import { BarPrice } from '../../model/bar';
 import { IChartModelBase } from '../../model/chart-model';
+import { Coordinate } from '../../model/coordinate';
+import { InternalHitTestCandidate } from '../../model/internal-hit-test';
 import { ISeries } from '../../model/iseries';
 import { ISeriesBarColorer } from '../../model/series-bar-colorer';
 import { TimePointIndex } from '../../model/time-data';
 import { BaselineFillItem, PaneRendererBaselineArea } from '../../renderers/baseline-renderer-area';
 import { BaselineStrokeItem, PaneRendererBaselineLine } from '../../renderers/baseline-renderer-line';
 import { CompositeRenderer } from '../../renderers/composite-renderer';
+import { hitTestLineSeries } from '../../renderers/series-hit-test';
 
 import { LinePaneViewBase } from './line-pane-view-base';
 
@@ -17,6 +20,30 @@ export class SeriesBaselinePaneView extends LinePaneViewBase<'Baseline', Baselin
 	public constructor(series: ISeries<'Baseline'>, model: IChartModelBase) {
 		super(series, model);
 		this._renderer.setRenderers([this._baselineAreaRenderer, this._baselineLineRenderer]);
+	}
+
+	public hitTest(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
+		if (!this._series.visible()) {
+			return null;
+		}
+
+		this._ensureValid();
+		if (this._itemsVisibleRange === null) {
+			return null;
+		}
+
+		const options = this._series.options();
+		return hitTestLineSeries(
+			this._items,
+			this._itemsVisibleRange,
+			x,
+			y,
+			options.lineType,
+			options.lineVisible ? options.lineWidth : 1,
+			options.pointMarkersVisible ? (options.pointMarkersRadius || options.lineWidth / 2 + 2) : undefined,
+			this._model.timeScale().barSpacing(),
+			options.hitTestTolerance
+		);
 	}
 
 	protected _createRawItem(time: TimePointIndex, price: BarPrice, colorer: ISeriesBarColorer<'Baseline'>): BaselineFillItem & BaselineStrokeItem {
@@ -72,6 +99,9 @@ export class SeriesBaselinePaneView extends LinePaneViewBase<'Baseline', Baselin
 
 		this._baselineLineRenderer.setData({
 			items: this._items,
+			hitTestLineType: options.lineType,
+			hitTestLineWidth: options.lineVisible ? options.lineWidth : 1,
+			hitTestTolerance: options.hitTestTolerance,
 			lineWidth: options.lineWidth,
 			lineStyle: options.lineStyle,
 			lineType: options.lineVisible ? options.lineType : undefined,

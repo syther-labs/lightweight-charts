@@ -34,6 +34,7 @@ export type InteractionAction =
 	| 'moveMouseCenter'
 	| 'moveMouseTopLeft'
 	| 'moveMouseBottomRight'
+	| 'moveMouseXY'
 	| 'clickXY';
 export type InteractionTarget =
 	| 'container'
@@ -47,8 +48,14 @@ export type Interaction = {
 	action: InteractionAction;
 	target?: InteractionTarget;
 } & ({
-	action: Omit<InteractionAction, 'clickXY'>;
+	action: Omit<InteractionAction, 'clickXY' | 'moveMouseXY'>;
 	options: never;
+} | {
+	action: 'moveMouseXY';
+	options: {
+		x: number;
+		y: number;
+	};
 } | {
 	action: 'clickXY';
 	options: {
@@ -197,6 +204,17 @@ async function performAction(
 					await page.mouse.move(
 						boundingBox.x + boundingBox.width,
 						boundingBox.y + boundingBox.height
+					);
+				}
+			}
+			break;
+		case 'moveMouseXY':
+			{
+				const boundingBox = await target.boundingBox();
+				if (boundingBox) {
+					await page.mouse.move(
+						boundingBox.x + interaction.options.x,
+						boundingBox.y + interaction.options.y
 					);
 				}
 			}

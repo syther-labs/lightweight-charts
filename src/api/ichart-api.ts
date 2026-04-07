@@ -1,6 +1,6 @@
 import { DeepPartial } from '../helpers/strict-type-checks';
 
-import { ChartOptionsImpl } from '../model/chart-model';
+import { ChartOptionsImpl, HoveredItemType } from '../model/chart-model';
 import { BarData, HistogramData, LineData, WhitespaceData } from '../model/data-consumer';
 import { Time } from '../model/horz-scale-behavior-time/types';
 import { CustomData, ICustomSeriesPaneView } from '../model/icustom-series';
@@ -35,6 +35,52 @@ export interface PaneSize {
 /**
  * Represents a mouse event.
  */
+export interface HoveredItemInfo<HorzScaleItem = Time> {
+	/**
+	 * The semantic kind of hovered item.
+	 *
+	 * Prefer this when you want to know what kind of geometry the cursor is over.
+	 */
+	type: HoveredItemType;
+	/**
+	 * The series that owns the hovered item, if any.
+	 */
+	series?: ISeriesApi<SeriesType, HorzScaleItem>;
+	/**
+	 * The object id associated with the hovered item, if any.
+	 */
+	objectId?: unknown;
+	/**
+	 * The pane index where the hover was resolved.
+	 */
+	paneIndex?: number;
+}
+
+export interface HoveredTarget<HorzScaleItem = Time> {
+	/**
+	 * The kind of source that owns the hovered target.
+	 *
+	 * Prefer this when you want ownership information about the hovered object.
+	 */
+	sourceKind: 'series' | 'series-primitive' | 'pane-primitive';
+	/**
+	 * The kind of hovered target object.
+	 */
+	objectKind: 'series' | 'custom-object' | 'custom-price-line' | 'series-marker' | 'primitive';
+	/**
+	 * The series that owns the hovered target, if any.
+	 */
+	series?: ISeriesApi<SeriesType, HorzScaleItem>;
+	/**
+	 * The object id associated with the hovered target, if any.
+	 */
+	objectId?: unknown;
+	/**
+	 * The pane index where the hover was resolved.
+	 */
+	paneIndex?: number;
+}
+
 export interface MouseEventParams<HorzScaleItem = Time> {
 	/**
 	 * Time of the data at the location of the mouse event.
@@ -64,6 +110,10 @@ export interface MouseEventParams<HorzScaleItem = Time> {
 	 */
 	seriesData: Map<ISeriesApi<SeriesType, HorzScaleItem>, BarData<HorzScaleItem> | LineData<HorzScaleItem> | HistogramData<HorzScaleItem> | CustomData<HorzScaleItem>>;
 	/**
+	 * Rich ownership information about the hovered target.
+	 */
+	hoveredTarget?: HoveredTarget<HorzScaleItem>;
+	/**
 	 * The {@link ISeriesApi} for the series at the point of the mouse event.
 	 */
 	hoveredSeries?: ISeriesApi<SeriesType, HorzScaleItem>;
@@ -71,6 +121,10 @@ export interface MouseEventParams<HorzScaleItem = Time> {
 	 * The ID of the object at the point of the mouse event.
 	 */
 	hoveredObjectId?: unknown;
+	/**
+	 * Rich information about the hovered item.
+	 */
+	hoveredItem?: HoveredItemInfo<HorzScaleItem>;
 	/**
 	 * The underlying source mouse or touch event data, if available
 	 */

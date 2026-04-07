@@ -9,6 +9,7 @@ import { ChartOptionsBase, IChartModelBase, OverlayPriceScaleOptions, VisiblePri
 import { Coordinate } from './coordinate';
 import { DefaultPriceScaleId, isDefaultPriceScale } from './default-price-scale';
 import { Grid } from './grid';
+import { hoveredSourceOnTopOrder } from './hovered-source-order';
 import { IPrimitiveHitTestSource } from './idata-source';
 import { IPanePrimitiveBase, PrimitiveHoveredItem } from './ipane-primitive';
 import { IPriceDataSource } from './iprice-data-source';
@@ -41,6 +42,12 @@ export class Pane implements IDestroyable, IPrimitiveHitTestSource {
 	private _width: number = 0;
 	private _stretchFactor: number = DEFAULT_STRETCH_FACTOR;
 	private _cachedOrderedSources: readonly IPriceDataSource[] | null = null;
+	private _cachedOrderedSourcesForRendering: {
+		base: readonly IPriceDataSource[];
+		hovered: IPrimitiveHitTestSource | undefined;
+		enabled: boolean;
+		result: readonly IPriceDataSource[];
+	} | null = null;
 	private _preserveEmptyPane: boolean = false;
 
 	private _destroyed: Delegate = new Delegate();
@@ -235,6 +242,7 @@ export class Pane implements IDestroyable, IPrimitiveHitTestSource {
 		}
 
 		this._cachedOrderedSources = null;
+		this._cachedOrderedSourcesForRendering = null;
 	}
 
 	public priceScalePosition(priceScale: PriceScale): PriceScalePosition {
@@ -363,6 +371,27 @@ export class Pane implements IDestroyable, IPrimitiveHitTestSource {
 		return this._cachedOrderedSources;
 	}
 
+	public orderedSourcesForRendering(): readonly IPriceDataSource[] {
+		const base = this.orderedSources();
+		const hovered = this._model.hoveredSource()?.source;
+		const enabled = this._model.options().hoveredSeriesOnTop;
+		const cached = this._cachedOrderedSourcesForRendering;
+
+		if (cached !== null && cached.base === base && cached.hovered === hovered && cached.enabled === enabled) {
+			return cached.result;
+		}
+
+		const result = hoveredSourceOnTopOrder(base, hovered, enabled);
+		this._cachedOrderedSourcesForRendering = {
+			base,
+			hovered,
+			enabled,
+			result,
+		};
+
+		return result;
+	}
+
 	public setSeriesOrder(series: Series<SeriesType>, order: number): void {
 		order = clamp(order, 0, this._dataSources.length - 1);
 
@@ -375,6 +404,7 @@ export class Pane implements IDestroyable, IPrimitiveHitTestSource {
 		this._dataSources.forEach((ps: IPriceDataSource, i: number) => ps.setZorder(i));
 
 		this._cachedOrderedSources = null;
+		this._cachedOrderedSourcesForRendering = null;
 
 		for (const ps of [this._leftPriceScale, this._rightPriceScale]) {
 			ps.invalidateSourcesCache();
@@ -457,6 +487,7 @@ export class Pane implements IDestroyable, IPrimitiveHitTestSource {
 		this.recalculatePriceScale(priceScale);
 
 		this._cachedOrderedSources = null;
+		this._cachedOrderedSourcesForRendering = null;
 	}
 
 	private _onPriceScaleModeChanged(priceScale: PriceScale, oldMode: PriceScaleState, newMode: PriceScaleState): void {

@@ -1,14 +1,43 @@
 import { ensureNotNull } from '../../helpers/assertions';
 
 import { BarPrice } from '../../model/bar';
+import { Coordinate } from '../../model/coordinate';
+import { InternalHitTestCandidate } from '../../model/internal-hit-test';
 import { ISeriesBarColorer } from '../../model/series-bar-colorer';
 import { TimePointIndex } from '../../model/time-data';
 import { HistogramItem, PaneRendererHistogram, PaneRendererHistogramData } from '../../renderers/histogram-renderer';
+import { hitTestSeriesRange } from '../../renderers/series-hit-test';
 
 import { LinePaneViewBase } from './line-pane-view-base';
 
 export class SeriesHistogramPaneView extends LinePaneViewBase<'Histogram', HistogramItem, PaneRendererHistogram> {
 	protected readonly _renderer: PaneRendererHistogram = new PaneRendererHistogram();
+
+	public hitTest(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
+		if (!this._series.visible()) {
+			return null;
+		}
+
+		this._ensureValid();
+		if (this._itemsVisibleRange === null) {
+			return null;
+		}
+
+		const histogramBase = this._series.priceScale().priceToCoordinate(this._series.options().base, ensureNotNull(this._series.firstValue()).value);
+		if (histogramBase === null) {
+			return null;
+		}
+
+		return hitTestSeriesRange(
+			this._items,
+			this._itemsVisibleRange,
+			x,
+			y,
+			this._model.timeScale().barSpacing(),
+			this._series.options().hitTestTolerance,
+			(item: HistogramItem) => [item.y, histogramBase]
+		);
+	}
 
 	protected _createRawItem(time: TimePointIndex, price: BarPrice, colorer: ISeriesBarColorer<'Histogram'>): HistogramItem {
 		return {
@@ -21,6 +50,7 @@ export class SeriesHistogramPaneView extends LinePaneViewBase<'Histogram', Histo
 		const data: PaneRendererHistogramData = {
 			items: this._items,
 			barSpacing: this._model.timeScale().barSpacing(),
+			hitTestTolerance: this._series.options().hitTestTolerance,
 			visibleRange: this._itemsVisibleRange,
 			histogramBase: this._series.priceScale().priceToCoordinate(this._series.options().base, ensureNotNull(this._series.firstValue()).value),
 		};

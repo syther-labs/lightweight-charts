@@ -25,6 +25,7 @@ import { SeriesType } from '../model/series-options';
 import { TimePointIndex } from '../model/time-data';
 import { TouchMouseEventData } from '../model/touch-mouse-event-data';
 
+import { buildHoveredEventInfo, HoveredItemInfoImpl, HoveredTargetInfoImpl } from './hovered-event-info';
 import { suggestChartSize, suggestPriceScaleWidth, suggestTimeScaleHeight } from './internal-layout-sizes-hints';
 import { PaneSeparator, SeparatorConstants } from './pane-separator';
 import { PaneWidget } from './pane-widget';
@@ -38,6 +39,8 @@ export interface MouseEventParamsImpl {
 	paneIndex?: number;
 	hoveredSeries?: Series<SeriesType>;
 	hoveredObject?: string;
+	hoveredItem?: HoveredItemInfoImpl;
+	hoveredTarget?: HoveredTargetInfoImpl;
 	touchMouseEventData?: TouchMouseEventData;
 }
 
@@ -817,24 +820,19 @@ export class ChartWidget<HorzScaleItem> implements IDestroyable, IChartWidgetBas
 
 		const hoveredSource = this.model().hoveredSource();
 
-		const hoveredSeries = hoveredSource !== null && hoveredSource.source instanceof Series
-			? hoveredSource.source
-			: undefined;
-
-		const hoveredObject = hoveredSource !== null && hoveredSource.object !== undefined
-			? hoveredSource.object.externalId
-			: undefined;
-
 		const paneIndex = this._getPaneIndex(pane);
+		const hoveredInfo = buildHoveredEventInfo(hoveredSource, paneIndex);
 
 		return {
 			originalTime: clientTime,
 			index: index ?? undefined,
 			point: point ?? undefined,
 			paneIndex: paneIndex !== -1 ? paneIndex : undefined,
-			hoveredSeries,
+			hoveredSeries: hoveredInfo.hoveredSeries,
 			seriesData,
-			hoveredObject,
+			hoveredObject: hoveredInfo.hoveredObject,
+			hoveredItem: hoveredInfo.hoveredItem,
+			hoveredTarget: hoveredInfo.hoveredTarget,
 			touchMouseEventData: event ?? undefined,
 		};
 	}

@@ -41,9 +41,13 @@ export abstract class SeriesPaneViewBase<TSeriesType extends SeriesType, ItemTyp
 			return null;
 		}
 
-		this._makeValid();
+		this._ensureValid();
 
 		return this._itemsVisibleRange === null ? null : this._renderer;
+	}
+
+	protected _ensureValid(): void {
+		this._makeValid();
 	}
 
 	protected abstract _fillRawPoints(): void;

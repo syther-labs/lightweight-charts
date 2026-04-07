@@ -1,9 +1,12 @@
 import { BitmapCoordinatesRenderingScope } from 'fancy-canvas';
 
+import { Coordinate } from '../model/coordinate';
+import { LegacyHitTestResultLike } from '../model/internal-hit-test';
 import { PricedValue } from '../model/price-scale';
 import { SeriesItemsIndexesRange, TimedValue, TimePointIndex } from '../model/time-data';
 
 import { BitmapCoordinatesPaneRenderer } from './bitmap-coordinates-pane-renderer';
+import { hitTestSeriesRange, toLegacyHitTestResult } from './series-hit-test';
 
 const showSpacingMinimalBarWidth = 1;
 const alignToMinimalWidthLimit = 4;
@@ -17,6 +20,7 @@ export interface PaneRendererHistogramData {
 
 	barSpacing: number;
 	histogramBase: number;
+	hitTestTolerance: number;
 
 	visibleRange: SeriesItemsIndexesRange | null;
 }
@@ -36,6 +40,23 @@ export class PaneRendererHistogram extends BitmapCoordinatesPaneRenderer {
 	public setData(data: PaneRendererHistogramData): void {
 		this._data = data;
 		this._precalculatedCache = [];
+	}
+
+	public hitTest(x: Coordinate, y: Coordinate): LegacyHitTestResultLike | null {
+		if (this._data === null) {
+			return null;
+		}
+		const histogramBase = this._data.histogramBase as Coordinate;
+
+		return toLegacyHitTestResult(hitTestSeriesRange(
+			this._data.items,
+			this._data.visibleRange,
+			x,
+			y,
+			this._data.barSpacing,
+			this._data.hitTestTolerance,
+			(item: HistogramItem) => [item.y, histogramBase]
+			));
 	}
 
 	protected override _drawImpl({ context: ctx, horizontalPixelRatio, verticalPixelRatio }: BitmapCoordinatesRenderingScope): void {

@@ -3,11 +3,14 @@ import { BitmapCoordinatesRenderingScope } from 'fancy-canvas';
 import { ensureNotNull } from '../helpers/assertions';
 
 import { BarCoordinates, BarPrices } from '../model/bar';
+import { Coordinate } from '../model/coordinate';
+import { LegacyHitTestResultLike } from '../model/internal-hit-test';
 import { BarColorerStyle } from '../model/series-bar-colorer';
 import { SeriesItemsIndexesRange, TimedValue } from '../model/time-data';
 
 import { BitmapCoordinatesPaneRenderer } from './bitmap-coordinates-pane-renderer';
 import { optimalBarWidth } from './optimal-bar-width';
+import { hitTestSeriesRange, toLegacyHitTestResult } from './series-hit-test';
 
 export type BarCandlestickItemBase = TimedValue & BarPrices & BarCoordinates;
 
@@ -17,6 +20,7 @@ export interface BarItem extends BarCandlestickItemBase, BarColorerStyle {
 export interface PaneRendererBarsData {
 	bars: readonly BarItem[];
 	barSpacing: number;
+	hitTestTolerance: number;
 	openVisible: boolean;
 	thinBars: boolean;
 
@@ -30,6 +34,22 @@ export class PaneRendererBars extends BitmapCoordinatesPaneRenderer {
 
 	public setData(data: PaneRendererBarsData): void {
 		this._data = data;
+	}
+
+	public hitTest(x: Coordinate, y: Coordinate): LegacyHitTestResultLike | null {
+		if (this._data === null) {
+			return null;
+		}
+
+		return toLegacyHitTestResult(hitTestSeriesRange(
+			this._data.bars,
+			this._data.visibleRange,
+			x,
+			y,
+			this._data.barSpacing,
+			this._data.hitTestTolerance,
+			(bar: BarItem) => [bar.highY, bar.lowY]
+			));
 	}
 
 	// eslint-disable-next-line complexity

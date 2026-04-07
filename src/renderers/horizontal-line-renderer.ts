@@ -1,7 +1,7 @@
 import { BitmapCoordinatesRenderingScope } from 'fancy-canvas';
 
-import { HoveredObject } from '../model/chart-model';
 import { Coordinate } from '../model/coordinate';
+import { HitTestPriority, LegacyHitTestResultLike } from '../model/internal-hit-test';
 
 import { BitmapCoordinatesPaneRenderer } from './bitmap-coordinates-pane-renderer';
 import { drawHorizontalLine, LineStyle, LineWidth, setLineStyle } from './draw-line';
@@ -25,7 +25,7 @@ export class HorizontalLineRenderer extends BitmapCoordinatesPaneRenderer {
 		this._data = data;
 	}
 
-	public hitTest(x: Coordinate, y: Coordinate): HoveredObject | null {
+	public hitTest(x: Coordinate, y: Coordinate): LegacyHitTestResultLike | null {
 		if (!this._data?.visible) {
 			return null;
 		}
@@ -35,6 +35,8 @@ export class HorizontalLineRenderer extends BitmapCoordinatesPaneRenderer {
 		if (y >= itemY - lineWidth - Constants.HitTestThreshold && y <= itemY + lineWidth + Constants.HitTestThreshold) {
 			return {
 				hitTestData: this._data,
+				distance: Math.abs(y - itemY),
+				hitTestPriority: HitTestPriority.Point,
 				externalId: externalId,
 			};
 		}

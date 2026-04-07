@@ -727,6 +727,13 @@ export interface SeriesOptionsCommon {
 	visible: boolean;
 
 	/**
+	 * Additional tolerance in pixels used when hit testing the series.
+	 *
+	 * @defaultValue `1`
+	 */
+	hitTestTolerance: number;
+
+	/**
 	 * Show the price line. Price line is a horizontal line indicating the last price of the series.
 	 *
 	 * @defaultValue `true`, `false` for yield curve charts

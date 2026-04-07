@@ -77,6 +77,31 @@ series data. It includes the following properties:
 - `barSpacing`: Spacing between consecutive bars.
 - `visibleRange`: The current visible range of items on the chart.
 
+### Hit Testing
+
+- ICustomSeriesPaneRenderer property:
+  [`hitTest`](../api/interfaces/ICustomSeriesPaneRenderer.md#hittest)
+
+This optional method allows a custom series to participate directly in hover and
+click resolution.
+
+Return `null` when the cursor misses the custom geometry. Return a
+[`CustomSeriesHitTestResult`](../api/interfaces/CustomSeriesHitTestResult.md)
+when the cursor hits a custom object. The result can provide:
+
+- `distance`: geometric distance from the cursor to the hit
+- `type`: optional geometric classification such as `point`, `line`, `range`, or `custom`
+- `objectId`: optional object identifier that becomes `hoveredObjectId`
+- `cursorStyle`: optional cursor override
+- `hitTestData`: optional renderer-defined hover data passed back into `draw`
+
+This hook lets the custom series participate in the same geometry-first
+arbitration model as built-in series.
+
+The `type` field is used for hover arbitration only. Public mouse events still
+report `hoveredItem.type` as `custom` for custom-series hits. Use `objectId`
+and `hoveredTarget.objectKind` to distinguish custom sub-objects.
+
 ### Price Value Builder
 
 - ICustomSeriesPaneView property:

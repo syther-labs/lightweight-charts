@@ -2,12 +2,15 @@ import { BitmapCoordinatesRenderingScope } from 'fancy-canvas';
 
 import { fillRectInnerBorder } from '../helpers/canvas-helpers';
 
+import { Coordinate } from '../model/coordinate';
+import { LegacyHitTestResultLike } from '../model/internal-hit-test';
 import { CandlesticksColorerStyle } from '../model/series-bar-colorer';
 import { SeriesItemsIndexesRange } from '../model/time-data';
 
 import { BarCandlestickItemBase } from './bars-renderer';
 import { BitmapCoordinatesPaneRenderer } from './bitmap-coordinates-pane-renderer';
 import { optimalCandlestickWidth } from './optimal-bar-width';
+import { hitTestSeriesRange, toLegacyHitTestResult } from './series-hit-test';
 
 export interface CandlestickItem extends BarCandlestickItemBase, CandlesticksColorerStyle {
 }
@@ -16,6 +19,7 @@ export interface PaneRendererCandlesticksData {
 	bars: readonly CandlestickItem[];
 
 	barSpacing: number;
+	hitTestTolerance: number;
 
 	wickVisible: boolean;
 	borderVisible: boolean;
@@ -35,6 +39,22 @@ export class PaneRendererCandlesticks extends BitmapCoordinatesPaneRenderer {
 
 	public setData(data: PaneRendererCandlesticksData): void {
 		this._data = data;
+	}
+
+	public hitTest(x: Coordinate, y: Coordinate): LegacyHitTestResultLike | null {
+		if (this._data === null) {
+			return null;
+		}
+
+		return toLegacyHitTestResult(hitTestSeriesRange(
+			this._data.bars,
+			this._data.visibleRange,
+			x,
+			y,
+			this._data.barSpacing,
+			this._data.hitTestTolerance,
+			(bar: CandlestickItem) => [bar.highY, bar.lowY]
+			));
 	}
 
 	protected override _drawImpl(renderingScope: BitmapCoordinatesRenderingScope): void {

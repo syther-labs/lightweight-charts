@@ -12,6 +12,7 @@ export const customStyleDefaults: CustomStyleOptions = {
 export const seriesOptionsDefaults: SeriesOptionsCommon = {
 	title: '',
 	visible: true,
+	hitTestTolerance: 1,
 	lastValueVisible: true,
 	priceLineVisible: true,
 	priceLineSource: PriceLineSource.LastBar,

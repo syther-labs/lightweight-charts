@@ -103,6 +103,37 @@ export interface PaneRendererCustomData<
 export type PriceToCoordinateConverter = (price: number) => Coordinate | null;
 
 /**
+ * Result of a custom-series hit test.
+ */
+export interface CustomSeriesHitTestResult {
+	/**
+	 * Distance from the cursor to the hit geometry in CSS pixels.
+	 */
+	distance: number;
+	/**
+	 * Optional identifier for the hovered custom object.
+	 */
+	objectId?: string;
+	/**
+	 * Geometric classification of the hit.
+	 *
+	 * This is used by the library to compare the custom hit against other
+	 * overlapping hits. It does not change the public `hoveredItem.type`, which
+	 * remains `custom` for custom-series hits. Use `objectId` (and
+	 * `hoveredTarget.objectKind`) to identify specific custom objects.
+	 */
+	type?: 'point' | 'line' | 'range' | 'custom';
+	/**
+	 * Optional cursor override.
+	 */
+	cursorStyle?: string;
+	/**
+	 * Optional renderer-specific data passed back into draw on hover.
+	 */
+	hitTestData?: unknown;
+}
+
+/**
  * Renderer for the custom series. This paints on the main chart pane.
  */
 export interface ICustomSeriesPaneRenderer {
@@ -120,6 +151,20 @@ export interface ICustomSeriesPaneRenderer {
 		isHovered: boolean,
 		hitTestData?: unknown
 	): void;
+
+	/**
+	 * Optional hit test function for the renderer.
+	 *
+	 * @param x - horizontal coordinate for the hit test.
+	 * @param y - vertical coordinate for the hit test.
+	 * @param priceConverter - converter function for changing prices into vertical coordinate values.
+	 * @returns hit test result or `null` if no item was hit.
+	 */
+	hitTest?(
+		x: Coordinate,
+		y: Coordinate,
+		priceConverter: PriceToCoordinateConverter
+	): CustomSeriesHitTestResult | null;
 }
 
 /**

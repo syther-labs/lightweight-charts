@@ -33,7 +33,7 @@ import { isSeriesDefinition, SeriesDefinition } from '../model/series/series-def
 import { Logical } from '../model/time-data';
 
 import { getSeriesDataCreator } from './get-series-data-creator';
-import { IChartApiBase, MouseEventHandler, MouseEventParams, PaneSize } from './ichart-api';
+import { HoveredItemInfo, HoveredTarget, IChartApiBase, MouseEventHandler, MouseEventParams, PaneSize } from './ichart-api';
 import { IPaneApi } from './ipane-api';
 import { IPriceScaleApi } from './iprice-scale-api';
 import { ISeriesApi } from './iseries-api';
@@ -441,14 +441,41 @@ export class ChartApi<HorzScaleItem> implements IChartApiBase<HorzScaleItem>, Da
 			!this._seriesMapReversed.has(param.hoveredSeries)
 				? undefined
 				: this._mapSeriesToApi(param.hoveredSeries);
+		const hoveredItem: HoveredItemInfo<HorzScaleItem> | undefined = param.hoveredItem === undefined
+			? undefined
+			: {
+				type: param.hoveredItem.type,
+				series:
+					param.hoveredItem.series === undefined ||
+					!this._seriesMapReversed.has(param.hoveredItem.series)
+						? undefined
+						: this._mapSeriesToApi(param.hoveredItem.series),
+				objectId: param.hoveredItem.objectId,
+				paneIndex: param.hoveredItem.paneIndex,
+			};
+		const hoveredTarget: HoveredTarget<HorzScaleItem> | undefined = param.hoveredTarget === undefined
+			? undefined
+			: {
+				sourceKind: param.hoveredTarget.sourceKind,
+				objectKind: param.hoveredTarget.objectKind,
+				series:
+					param.hoveredTarget.series === undefined ||
+					!this._seriesMapReversed.has(param.hoveredTarget.series)
+						? undefined
+						: this._mapSeriesToApi(param.hoveredTarget.series),
+				objectId: param.hoveredTarget.objectId,
+				paneIndex: param.hoveredTarget.paneIndex,
+			};
 
 		return {
 			time: param.originalTime as HorzScaleItem,
 			logical: param.index as Logical | undefined,
 			point: param.point,
 			paneIndex: param.paneIndex,
+			hoveredTarget,
 			hoveredSeries,
 			hoveredObjectId: param.hoveredObject,
+			hoveredItem,
 			seriesData,
 			sourceEvent: param.touchMouseEventData,
 		};

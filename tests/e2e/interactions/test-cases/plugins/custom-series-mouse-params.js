@@ -97,6 +97,7 @@ class WhiskerBoxSeriesRenderer {
 	constructor() {
 		this._data = null;
 		this._options = null;
+		this._hitTestCalls = 0;
 	}
 
 	draw(
@@ -106,6 +107,55 @@ class WhiskerBoxSeriesRenderer {
 		target.useMediaCoordinateSpace(scope =>
 			this._drawImpl(scope, priceConverter)
 		);
+	}
+
+	hitTest(
+		x,
+		y,
+		priceConverter
+	) {
+		if (
+			this._data === null ||
+			this._data.visibleRange === null
+		) {
+			return null;
+		}
+
+		this._hitTestCalls += 1;
+		const radius = desiredWidths(this._data.barSpacing).outlierRadius + 2;
+		let bestDistance = Number.POSITIVE_INFINITY;
+
+		for (
+			let i = this._data.visibleRange.from;
+			i < this._data.visibleRange.to;
+			i++
+		) {
+			const bar = this._data.bars[i];
+			const outliers = bar.originalData.outliers || [];
+			for (const outlier of outliers) {
+				const outlierY = priceConverter(outlier);
+				if (outlierY === null) {
+					continue;
+				}
+				const distance = Math.hypot(x - bar.x, y - outlierY);
+				if (distance <= radius) {
+					bestDistance = Math.min(bestDistance, distance);
+				}
+			}
+		}
+
+		if (!Number.isFinite(bestDistance)) {
+			return null;
+		}
+
+		return {
+			distance: bestDistance,
+			type: 'point',
+			objectId: 'outlier-100',
+			hitTestData: {
+				type: 'outlier',
+			},
+		};
 	}
 
 	update(
@@ -250,7 +300,6 @@ class WhiskerBoxSeriesRenderer {
 }
 
 const defaultOptions = {
-	...LightweightCharts.customSeriesDefaultOptions,
 	whiskerColor: '#456599',
 	lowerQuartileFill: '#846ED4',
 	upperQuartileFill: '#C44760',
@@ -287,8 +336,18 @@ class WhiskerBoxSeries {
 	}
 }
 
+let clickPoint = null;
+
 function initialInteractionsToPerform() {
-	return [{ action: 'click' }];
+	if (clickPoint === null) {
+		return [];
+	}
+
+	return [{
+		action: 'clickXY',
+		target: 'pane',
+		options: clickPoint,
+	}];
 }
 
 function finalInteractionsToPerform() {
@@ -296,9 +355,39 @@ function finalInteractionsToPerform() {
 }
 
 let pass = false;
+let hoveredSeriesMatches = false;
+let customHitTestUsed = false;
+let lastHoveredTarget = null;
+let lastHoveredItem = null;
+
+function isExpectedCustomHover(mouseParams, myCustomSeries) {
+	const csdata = mouseParams.seriesData.get(myCustomSeries);
+	if (!csdata) {
+		return false;
+	}
+
+	return Boolean(
+		csdata.quartiles &&
+		csdata.quartiles.length === 5 &&
+		csdata.time &&
+		mouseParams.hoveredItem &&
+		mouseParams.hoveredItem.type === 'custom' &&
+		mouseParams.hoveredItem.objectId === 'outlier-100' &&
+		mouseParams.hoveredTarget &&
+		mouseParams.hoveredTarget.sourceKind === 'series' &&
+		mouseParams.hoveredTarget.objectKind === 'custom-object' &&
+		mouseParams.hoveredTarget.series === myCustomSeries &&
+		mouseParams.hoveredTarget.objectId === 'outlier-100' &&
+		mouseParams.hoveredObjectId === 'outlier-100'
+	);
+}
 
 function beforeInteractions(container) {
-	const chart = LightweightCharts.createChart(container);
+	const chart = LightweightCharts.createChart(container, {
+		rightPriceScale: {
+			visible: false,
+		},
+	});
 
 	const customSeriesView = new WhiskerBoxSeries();
 	const myCustomSeries = chart.addCustomSeries(customSeriesView, {
@@ -315,18 +404,29 @@ function beforeInteractions(container) {
 		if (!mouseParams) {
 			return;
 		}
-		const csdata = mouseParams.seriesData.get(myCustomSeries);
-		if (!csdata) {
-			return;
-		}
-		if (csdata.quartiles && csdata.quartiles.length === 5 && csdata.time) {
+		lastHoveredTarget = mouseParams.hoveredTarget ?? null;
+		lastHoveredItem = mouseParams.hoveredItem ?? null;
+		hoveredSeriesMatches = mouseParams.hoveredSeries === myCustomSeries;
+		if (isExpectedCustomHover(mouseParams, myCustomSeries)) {
 			pass = true;
+			customHitTestUsed = customSeriesView._renderer._hitTestCalls > 0;
 			return;
 		}
 	});
 
 	return new Promise(resolve => {
 		requestAnimationFrame(() => {
+			const outlierBar = data.find(item => Array.isArray(item.outliers) && item.outliers.includes(100));
+			if (outlierBar) {
+				const x = chart.timeScale().timeToCoordinate(outlierBar.time);
+				const y = myCustomSeries.priceToCoordinate(100);
+				if (x !== null && y !== null) {
+					clickPoint = {
+						x: Math.round(x),
+						y: Math.round(y),
+					};
+				}
+			}
 			resolve();
 		});
 	});
@@ -338,7 +438,13 @@ function afterInitialInteractions() {
 
 function afterFinalInteractions() {
 	if (!pass) {
-		throw new Error("Expected hoveredObjectId to be equal to 'TEST'.");
+		throw new Error(`Expected custom series hover to preserve custom hover semantics. hoveredSeriesMatches=${String(hoveredSeriesMatches)} hoveredItem=${JSON.stringify(lastHoveredItem)} hoveredTarget=${JSON.stringify(lastHoveredTarget)} customHitTestUsed=${String(customHitTestUsed)}`);
+	}
+	if (!hoveredSeriesMatches) {
+		throw new Error('Expected hoveredSeries to match the custom series.');
+	}
+	if (!customHitTestUsed) {
+		throw new Error('Expected the custom series hitTest hook to be used.');
 	}
 
 	return Promise.resolve();
