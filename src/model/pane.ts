@@ -241,8 +241,7 @@ export class Pane implements IDestroyable, IPrimitiveHitTestSource {
 			this.recalculatePriceScale(priceScale);
 		}
 
-		this._cachedOrderedSources = null;
-		this._cachedOrderedSourcesForRendering = null;
+		this._invalidateSourceCaches();
 	}
 
 	public priceScalePosition(priceScale: PriceScale): PriceScalePosition {
@@ -403,8 +402,7 @@ export class Pane implements IDestroyable, IPrimitiveHitTestSource {
 
 		this._dataSources.forEach((ps: IPriceDataSource, i: number) => ps.setZorder(i));
 
-		this._cachedOrderedSources = null;
-		this._cachedOrderedSourcesForRendering = null;
+		this._invalidateSourceCaches();
 
 		for (const ps of [this._leftPriceScale, this._rightPriceScale]) {
 			ps.invalidateSourcesCache();
@@ -486,6 +484,10 @@ export class Pane implements IDestroyable, IPrimitiveHitTestSource {
 
 		this.recalculatePriceScale(priceScale);
 
+		this._invalidateSourceCaches();
+	}
+
+	private _invalidateSourceCaches(): void {
 		this._cachedOrderedSources = null;
 		this._cachedOrderedSourcesForRendering = null;
 	}

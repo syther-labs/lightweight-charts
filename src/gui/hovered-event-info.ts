@@ -3,14 +3,8 @@ import { Pane } from '../model/pane';
 import { Series } from '../model/series';
 import { SeriesType } from '../model/series-options';
 
-export interface HoveredItemInfoImpl {
+export interface HoveredInfoImpl {
 	type: HoveredItemType;
-	series?: Series<SeriesType>;
-	objectId?: unknown;
-	paneIndex?: number;
-}
-
-export interface HoveredTargetInfoImpl {
 	sourceKind: 'series' | 'series-primitive' | 'pane-primitive';
 	objectKind: 'series' | 'custom-object' | 'custom-price-line' | 'series-marker' | 'primitive';
 	series?: Series<SeriesType>;
@@ -21,14 +15,13 @@ export interface HoveredTargetInfoImpl {
 export interface HoveredEventInfoImpl {
 	hoveredSeries?: Series<SeriesType>;
 	hoveredObject?: string;
-	hoveredItem?: HoveredItemInfoImpl;
-	hoveredTarget?: HoveredTargetInfoImpl;
+	hoveredInfo?: HoveredInfoImpl;
 }
 
 function hoveredTargetSourceKind(
 	source: HoveredSource['source'],
 	itemType: HoveredItemType
-): HoveredTargetInfoImpl['sourceKind'] {
+): HoveredInfoImpl['sourceKind'] {
 	if (source instanceof Pane) {
 		return 'pane-primitive';
 	}
@@ -41,11 +34,12 @@ function hoveredTargetSourceKind(
 }
 
 function hoveredTargetObjectKind(
-	item: HoveredItemInfoImpl
-): HoveredTargetInfoImpl['objectKind'] {
-	switch (item.type) {
+	itemType: HoveredItemType,
+	objectId: unknown
+): HoveredInfoImpl['objectKind'] {
+	switch (itemType) {
 		case 'custom':
-			return item.objectId !== undefined ? 'custom-object' : 'series';
+			return objectId !== undefined ? 'custom-object' : 'series';
 		case 'price-line':
 			return 'custom-price-line';
 		case 'marker':
@@ -77,8 +71,10 @@ export function buildHoveredEventInfo(
 		};
 	}
 
-	const hoveredItem: HoveredItemInfoImpl = {
+	const hoveredInfo: HoveredInfoImpl = {
 		type: hoveredSource.itemType,
+		sourceKind: hoveredTargetSourceKind(hoveredSource.source, hoveredSource.itemType),
+		objectKind: hoveredTargetObjectKind(hoveredSource.itemType, hoveredObject),
 		series: hoveredSeries,
 		objectId: hoveredObject,
 		paneIndex: normalizedPaneIndex,
@@ -87,13 +83,6 @@ export function buildHoveredEventInfo(
 	return {
 		hoveredSeries,
 		hoveredObject,
-		hoveredItem,
-		hoveredTarget: {
-			sourceKind: hoveredTargetSourceKind(hoveredSource.source, hoveredItem.type),
-			objectKind: hoveredTargetObjectKind(hoveredItem),
-			series: hoveredSeries,
-			objectId: hoveredObject,
-			paneIndex: normalizedPaneIndex,
-		},
+		hoveredInfo,
 	};
 }

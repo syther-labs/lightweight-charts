@@ -33,30 +33,15 @@ export interface PaneSize {
 }
 
 /**
- * Represents a mouse event.
+ * Represents rich information about the hovered chart object.
  */
-export interface HoveredItemInfo<HorzScaleItem = Time> {
+export interface HoveredInfo<HorzScaleItem = Time> {
 	/**
 	 * The semantic kind of hovered item.
 	 *
 	 * Prefer this when you want to know what kind of geometry the cursor is over.
 	 */
 	type: HoveredItemType;
-	/**
-	 * The series that owns the hovered item, if any.
-	 */
-	series?: ISeriesApi<SeriesType, HorzScaleItem>;
-	/**
-	 * The object id associated with the hovered item, if any.
-	 */
-	objectId?: unknown;
-	/**
-	 * The pane index where the hover was resolved.
-	 */
-	paneIndex?: number;
-}
-
-export interface HoveredTarget<HorzScaleItem = Time> {
 	/**
 	 * The kind of source that owns the hovered target.
 	 *
@@ -68,11 +53,11 @@ export interface HoveredTarget<HorzScaleItem = Time> {
 	 */
 	objectKind: 'series' | 'custom-object' | 'custom-price-line' | 'series-marker' | 'primitive';
 	/**
-	 * The series that owns the hovered target, if any.
+	 * The series that owns the hovered item, if any.
 	 */
 	series?: ISeriesApi<SeriesType, HorzScaleItem>;
 	/**
-	 * The object id associated with the hovered target, if any.
+	 * The object id associated with the hovered item, if any.
 	 */
 	objectId?: unknown;
 	/**
@@ -110,21 +95,21 @@ export interface MouseEventParams<HorzScaleItem = Time> {
 	 */
 	seriesData: Map<ISeriesApi<SeriesType, HorzScaleItem>, BarData<HorzScaleItem> | LineData<HorzScaleItem> | HistogramData<HorzScaleItem> | CustomData<HorzScaleItem>>;
 	/**
-	 * Rich ownership information about the hovered target.
+	 * Rich information about the hovered item and its owner.
 	 */
-	hoveredTarget?: HoveredTarget<HorzScaleItem>;
+	hoveredInfo?: HoveredInfo<HorzScaleItem>;
 	/**
 	 * The {@link ISeriesApi} for the series at the point of the mouse event.
+	 *
+	 * @deprecated Use `hoveredInfo.series` instead.
 	 */
 	hoveredSeries?: ISeriesApi<SeriesType, HorzScaleItem>;
 	/**
 	 * The ID of the object at the point of the mouse event.
+	 *
+	 * @deprecated Use `hoveredInfo.objectId` instead.
 	 */
 	hoveredObjectId?: unknown;
-	/**
-	 * Rich information about the hovered item.
-	 */
-	hoveredItem?: HoveredItemInfo<HorzScaleItem>;
 	/**
 	 * The underlying source mouse or touch event data, if available
 	 */

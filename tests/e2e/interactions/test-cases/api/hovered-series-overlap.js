@@ -82,10 +82,11 @@ function beforeInteractions(container) {
 		}
 		if (
 			mouseParams.hoveredSeries === blueSeries &&
-			mouseParams.hoveredTarget &&
-			mouseParams.hoveredTarget.sourceKind === 'series' &&
-			mouseParams.hoveredTarget.objectKind === 'series' &&
-			mouseParams.hoveredTarget.series === blueSeries
+			mouseParams.hoveredInfo &&
+			mouseParams.hoveredInfo.type === 'series-point' &&
+			mouseParams.hoveredInfo.sourceKind === 'series' &&
+			mouseParams.hoveredInfo.objectKind === 'series' &&
+			mouseParams.hoveredInfo.series === blueSeries
 		) {
 			finalHoverMatched = true;
 		}

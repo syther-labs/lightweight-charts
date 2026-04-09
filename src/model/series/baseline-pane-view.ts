@@ -22,16 +22,7 @@ export class SeriesBaselinePaneView extends LinePaneViewBase<'Baseline', Baselin
 		this._renderer.setRenderers([this._baselineAreaRenderer, this._baselineLineRenderer]);
 	}
 
-	public hitTest(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
-		if (!this._series.visible()) {
-			return null;
-		}
-
-		this._ensureValid();
-		if (this._itemsVisibleRange === null) {
-			return null;
-		}
-
+	protected override _hitTestImpl(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
 		const options = this._series.options();
 		return hitTestLineSeries(
 			this._items,
@@ -99,9 +90,6 @@ export class SeriesBaselinePaneView extends LinePaneViewBase<'Baseline', Baselin
 
 		this._baselineLineRenderer.setData({
 			items: this._items,
-			hitTestLineType: options.lineType,
-			hitTestLineWidth: options.lineVisible ? options.lineWidth : 1,
-			hitTestTolerance: options.hitTestTolerance,
 			lineWidth: options.lineWidth,
 			lineStyle: options.lineStyle,
 			lineType: options.lineVisible ? options.lineType : undefined,

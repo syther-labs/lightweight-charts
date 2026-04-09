@@ -99,8 +99,8 @@ This hook lets the custom series participate in the same geometry-first
 arbitration model as built-in series.
 
 The `type` field is used for hover arbitration only. Public mouse events still
-report `hoveredItem.type` as `custom` for custom-series hits. Use `objectId`
-and `hoveredTarget.objectKind` to distinguish custom sub-objects.
+report `hoveredInfo.type` as `custom` for custom-series hits. Use `objectId`
+and `hoveredInfo.objectKind` to distinguish custom sub-objects.
 
 ### Price Value Builder
 

@@ -130,7 +130,7 @@ let createdPriceLine = false;
 let pass = false;
 let lastHoveredObjectId = null;
 let lastHoveredSeriesMatched = false;
-let lastHoveredTarget = null;
+let lastHoveredInfo = null;
 let clickPoint = null;
 
 function beforeInteractions(container) {
@@ -147,14 +147,15 @@ function beforeInteractions(container) {
 		}
 		lastHoveredObjectId = mouseParams.hoveredObjectId ?? null;
 		lastHoveredSeriesMatched = mouseParams.hoveredSeries === mainSeries;
-		lastHoveredTarget = mouseParams.hoveredTarget ?? null;
+		lastHoveredInfo = mouseParams.hoveredInfo ?? null;
 		if (
 			mouseParams.hoveredObjectId === 'TEST' &&
-			mouseParams.hoveredTarget &&
-			mouseParams.hoveredTarget.sourceKind === 'series' &&
-			mouseParams.hoveredTarget.objectKind === 'custom-price-line' &&
-			mouseParams.hoveredTarget.objectId === 'TEST' &&
-			mouseParams.hoveredTarget.series === mainSeries
+			mouseParams.hoveredInfo &&
+			mouseParams.hoveredInfo.type === 'price-line' &&
+			mouseParams.hoveredInfo.sourceKind === 'series' &&
+			mouseParams.hoveredInfo.objectKind === 'custom-price-line' &&
+			mouseParams.hoveredInfo.objectId === 'TEST' &&
+			mouseParams.hoveredInfo.series === mainSeries
 		) {
 			pass = true;
 			return;
@@ -200,7 +201,7 @@ function afterFinalInteractions() {
 	}
 
 	if (!pass) {
-		throw new Error(`Expected hoveredObjectId to be equal to 'TEST'. Received ${String(lastHoveredObjectId)}. hoveredSeriesMatched=${String(lastHoveredSeriesMatched)} hoveredTarget=${JSON.stringify(lastHoveredTarget)}.`);
+		throw new Error(`Expected hoveredObjectId to be equal to 'TEST'. Received ${String(lastHoveredObjectId)}. hoveredSeriesMatched=${String(lastHoveredSeriesMatched)} hoveredInfo=${JSON.stringify(lastHoveredInfo)}.`);
 	}
 
 	return Promise.resolve();

@@ -2,7 +2,7 @@ let hoverPoint = null;
 let clickHoverMatched = false;
 let lastClickPoint = null;
 let lastClickHoveredObjectId = null;
-let lastHoveredTarget = null;
+let lastHoveredInfo = null;
 let lineSeries = null;
 
 function initialInteractionsToPerform() {
@@ -60,7 +60,7 @@ function beforeInteractions(container) {
 
 		lastClickPoint = mouseParams.point;
 		lastClickHoveredObjectId = mouseParams.hoveredObjectId ?? null;
-		lastHoveredTarget = mouseParams.hoveredTarget ?? null;
+		lastHoveredInfo = mouseParams.hoveredInfo ?? null;
 		clickHoverMatched = mouseParams.hoveredSeries === lineSeries;
 	});
 
@@ -91,13 +91,14 @@ function afterFinalInteractions() {
 	}
 
 	if (
-		!lastHoveredTarget ||
-		lastHoveredTarget.sourceKind !== 'series' ||
-		lastHoveredTarget.objectKind !== 'series' ||
-		lastHoveredTarget.series !== lineSeries ||
-		!(lastHoveredTarget.objectId == null && lastClickHoveredObjectId == null)
+		!lastHoveredInfo ||
+		lastHoveredInfo.type !== 'series-point' ||
+		lastHoveredInfo.sourceKind !== 'series' ||
+		lastHoveredInfo.objectKind !== 'series' ||
+		lastHoveredInfo.series !== lineSeries ||
+		!(lastHoveredInfo.objectId == null && lastClickHoveredObjectId == null)
 	) {
-		throw new Error(`Expected hoveredTarget to classify the built-in line hit as a series target. sourceKind=${String(lastHoveredTarget && lastHoveredTarget.sourceKind)} objectKind=${String(lastHoveredTarget && lastHoveredTarget.objectKind)} objectId=${String(lastHoveredTarget && lastHoveredTarget.objectId)}`);
+		throw new Error(`Expected hoveredInfo to classify the built-in line hit as a series point. type=${String(lastHoveredInfo && lastHoveredInfo.type)} sourceKind=${String(lastHoveredInfo && lastHoveredInfo.sourceKind)} objectKind=${String(lastHoveredInfo && lastHoveredInfo.objectKind)} objectId=${String(lastHoveredInfo && lastHoveredInfo.objectId)}`);
 	}
 
 	return Promise.resolve();

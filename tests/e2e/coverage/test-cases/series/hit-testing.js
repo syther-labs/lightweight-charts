@@ -198,15 +198,13 @@ function beforeInteractions(container) {
 		targetChart.subscribeCrosshairMove(mouseParams => {
 			void mouseParams?.hoveredSeries;
 			void mouseParams?.hoveredObjectId;
-			void mouseParams?.hoveredItem;
-			void mouseParams?.hoveredTarget;
+			void mouseParams?.hoveredInfo;
 		});
 
 		targetChart.subscribeClick(mouseParams => {
 			void mouseParams?.hoveredSeries;
 			void mouseParams?.hoveredObjectId;
-			void mouseParams?.hoveredItem;
-			void mouseParams?.hoveredTarget;
+			void mouseParams?.hoveredInfo;
 		});
 	}
 

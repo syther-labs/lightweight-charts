@@ -729,7 +729,7 @@ export interface SeriesOptionsCommon {
 	/**
 	 * Additional tolerance in pixels used when hit testing the series.
 	 *
-	 * @defaultValue `1`
+	 * @defaultValue `3`
 	 */
 	hitTestTolerance: number;
 

@@ -13,16 +13,7 @@ import { LinePaneViewBase } from './line-pane-view-base';
 export class SeriesHistogramPaneView extends LinePaneViewBase<'Histogram', HistogramItem, PaneRendererHistogram> {
 	protected readonly _renderer: PaneRendererHistogram = new PaneRendererHistogram();
 
-	public hitTest(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
-		if (!this._series.visible()) {
-			return null;
-		}
-
-		this._ensureValid();
-		if (this._itemsVisibleRange === null) {
-			return null;
-		}
-
+	protected override _hitTestImpl(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
 		const histogramBase = this._series.priceScale().priceToCoordinate(this._series.options().base, ensureNotNull(this._series.firstValue()).value);
 		if (histogramBase === null) {
 			return null;
@@ -35,7 +26,10 @@ export class SeriesHistogramPaneView extends LinePaneViewBase<'Histogram', Histo
 			y,
 			this._model.timeScale().barSpacing(),
 			this._series.options().hitTestTolerance,
-			(item: HistogramItem) => [item.y, histogramBase]
+			(item: HistogramItem, out: [Coordinate, Coordinate]) => {
+				out[0] = item.y;
+				out[1] = histogramBase;
+			}
 		);
 	}
 
@@ -50,7 +44,6 @@ export class SeriesHistogramPaneView extends LinePaneViewBase<'Histogram', Histo
 		const data: PaneRendererHistogramData = {
 			items: this._items,
 			barSpacing: this._model.timeScale().barSpacing(),
-			hitTestTolerance: this._series.options().hitTestTolerance,
 			visibleRange: this._itemsVisibleRange,
 			histogramBase: this._series.priceScale().priceToCoordinate(this._series.options().base, ensureNotNull(this._series.firstValue()).value),
 		};

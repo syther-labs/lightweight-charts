@@ -8,9 +8,13 @@ export function hoveredSourceOnTopOrder<T>(sources: readonly T[], hoveredSource:
 		return sources;
 	}
 
-	const reorderedSources = sources.slice();
-	const [hoveredItem] = reorderedSources.splice(hoveredIndex, 1);
-	reorderedSources.push(hoveredItem);
+	const reorderedSources: T[] = [];
+	for (let i = 0; i < sources.length; i++) {
+		if (i !== hoveredIndex) {
+			reorderedSources.push(sources[i]);
+		}
+	}
+	reorderedSources.push(sources[hoveredIndex]);
 
 	return reorderedSources;
 }

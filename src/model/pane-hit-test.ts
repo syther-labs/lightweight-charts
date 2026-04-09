@@ -3,10 +3,9 @@ import { IPaneView } from '../views/pane/ipane-view';
 import { HoveredItemType, HoveredObject } from './chart-model';
 import { Coordinate } from './coordinate';
 import { IDataSource, IPrimitiveHitTestSource } from './idata-source';
-import { HitTestPriority, hoveredItemTypeToInternalKind, InternalHitTestCandidate, internalKindToHoveredItemType, isBetterHit, normalizeHitTestResult } from './internal-hit-test';
+import { HitTestPriority, InternalHitTestCandidate, isBetterHit } from './internal-hit-test';
 import { PrimitiveHoveredItem, PrimitivePaneViewZOrder } from './ipane-primitive';
 import { Pane } from './pane';
-import { Series } from './series';
 
 export interface HitTestResult {
 	source: IPrimitiveHitTestSource;
@@ -25,36 +24,6 @@ interface BestPrimitiveHit {
 	hit: PrimitiveHoveredItem;
 	candidate: InternalHitTestCandidate;
 	source: IPrimitiveHitTestSource;
-}
-
-function itemTypeFromCandidate(source: IPrimitiveHitTestSource, candidate: InternalHitTestCandidate): HoveredItemType {
-	const candidateItemType = internalKindToHoveredItemType(candidate.itemKind);
-	if (candidateItemType !== undefined) {
-		return candidateItemType;
-	}
-
-	if (source instanceof Series) {
-		// Pane-view series hits never tag themselves as price lines; the
-		// horizontal-line renderer path does so via `externalId`, including
-		// custom-series price lines.
-		if (candidate.externalId !== undefined) {
-			return 'price-line';
-		}
-		if (source.seriesType() === 'Custom') {
-			return 'custom';
-		}
-		switch (candidate.priority) {
-			case HitTestPriority.Point:
-				return 'series-point';
-			case HitTestPriority.Line:
-				return 'series-line';
-			case HitTestPriority.Range:
-			default:
-				return 'series-range';
-		}
-	}
-
-	return 'primitive';
 }
 
 function hoveredObjectFromCandidate(candidate: InternalHitTestCandidate): HoveredObject {
@@ -80,7 +49,7 @@ function primitiveHitCandidate(hitResult: PrimitiveHoveredItem): InternalHitTest
 	return {
 		distance: hitResult.distance ?? 0,
 		priority: hitResult.hitTestPriority ?? (hitResult.itemType === 'marker' ? HitTestPriority.Point : HitTestPriority.Range),
-		itemKind: hoveredItemTypeToInternalKind(hitResult.itemType ?? 'primitive'),
+		itemType: hitResult.itemType ?? 'primitive',
 		cursorStyle: hitResult.cursorStyle,
 		externalId: hitResult.externalId,
 	};
@@ -126,7 +95,7 @@ function convertPrimitiveHitResult(
 		source: primitiveHit.source,
 		object: hoveredObjectFromCandidate(primitiveHit.candidate),
 		cursorStyle: primitiveHit.candidate.cursorStyle,
-		itemType: internalKindToHoveredItemType(primitiveHit.candidate.itemKind) ?? 'primitive',
+		itemType: primitiveHit.candidate.itemType ?? 'primitive',
 	};
 }
 
@@ -150,7 +119,7 @@ function hitTestPaneView(
 
 		if (candidate === null) {
 			const renderer = paneView.renderer(pane);
-			candidate = renderer !== null && renderer.hitTest ? normalizeHitTestResult(renderer.hitTest(x, y)) : null;
+			candidate = renderer !== null && renderer.hitTest ? renderer.hitTest(x, y) : null;
 		}
 
 		if (candidate !== null) {
@@ -205,7 +174,7 @@ export function hitTestPane(
 					view: sourceResult.view,
 					object: hoveredObjectFromCandidate(sourceResult.candidate),
 					cursorStyle: sourceResult.candidate.cursorStyle,
-					itemType: itemTypeFromCandidate(source, sourceResult.candidate),
+					itemType: sourceResult.candidate.itemType ?? 'primitive',
 				};
 				if (bestSourceHit === null || isBetterHit(sourceResult.candidate, bestSourceCandidate)) {
 					bestSourceHit = candidateHit;

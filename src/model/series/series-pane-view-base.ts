@@ -2,6 +2,7 @@ import { IPaneRenderer } from '../../renderers/ipane-renderer';
 import { IUpdatablePaneView, UpdateType } from '../../views/pane/iupdatable-pane-view';
 
 import { IChartModelBase } from '../chart-model';
+import { InternalHitTestCandidate } from '../internal-hit-test';
 import { ISeries } from '../iseries';
 import { PriceScale } from '../price-scale';
 import { SeriesType } from '../series-options';
@@ -41,16 +42,28 @@ export abstract class SeriesPaneViewBase<TSeriesType extends SeriesType, ItemTyp
 			return null;
 		}
 
-		this._ensureValid();
+		this._makeValid();
 
 		return this._itemsVisibleRange === null ? null : this._renderer;
 	}
 
-	protected _ensureValid(): void {
+	public hitTest(x: number, y: number): InternalHitTestCandidate | null {
+		if (!this._series.visible()) {
+			return null;
+		}
+
 		this._makeValid();
+		if (this._itemsVisibleRange === null) {
+			return null;
+		}
+
+		return this._hitTestImpl(x, y);
 	}
 
 	protected abstract _fillRawPoints(): void;
+	protected _hitTestImpl(x: number, y: number): InternalHitTestCandidate | null {
+		return null;
+	}
 
 	protected _updateOptions(): void {
 		this._items = this._items.map((item: ItemType) => ({
@@ -67,7 +80,7 @@ export abstract class SeriesPaneViewBase<TSeriesType extends SeriesType, ItemTyp
 
 	protected abstract _prepareRendererData(): void;
 
-	private _makeValid(): void {
+	protected _makeValid(): void {
 		// If the conflation setting or factor changed (due to zoom/barSpacing),
 		// we must rebuild raw items from series data.
 		const timeScale = this._model.timeScale();

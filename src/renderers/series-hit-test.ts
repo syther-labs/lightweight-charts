@@ -1,18 +1,37 @@
+import { lowerBound, upperBound } from '../helpers/algorithms';
+
 import { Coordinate } from '../model/coordinate';
-import { HitTestPriority, InternalHitTestCandidate, toLegacyHitTestResult } from '../model/internal-hit-test';
+import { HitTestPriority, InternalHitTestCandidate } from '../model/internal-hit-test';
 import { SeriesItemsIndexesRange, TimedValue } from '../model/time-data';
 
 import { LinePoint, LineType } from './draw-line';
 import { getControlPoints } from './walk-line';
 
 const BEZIER_APPROXIMATION_STEPS = 12;
+const rangePair: [Coordinate, Coordinate] = [0 as Coordinate, 0 as Coordinate];
 
 interface TimedCoordinate extends TimedValue {
 	x: Coordinate;
 }
 
-function hoveredSeriesHitTestResult(distance: number, priority: HitTestPriority): InternalHitTestCandidate {
-	return { distance, priority };
+interface XCoordinate {
+	x: Coordinate;
+}
+
+function lowerBoundByCoordinate(item: XCoordinate, value: number): boolean {
+	return item.x < value;
+}
+
+function upperBoundByCoordinate(item: XCoordinate, value: number): boolean {
+	return value < item.x;
+}
+
+function hoveredSeriesHitTestResult(
+	distance: number,
+	priority: HitTestPriority,
+	itemType: InternalHitTestCandidate['itemType']
+): InternalHitTestCandidate {
+	return { distance, priority, itemType };
 }
 
 function isWithinHorizontalSweep(x: number, left: number, right: number, radius: number): boolean {
@@ -177,9 +196,13 @@ export function hitTestLineSeries(
 	const radius = Math.max(lineWidth / 2, pointMarkersRadius ?? 0) + hitTestTolerance;
 	let pointMinDistance = Number.POSITIVE_INFINITY;
 
-	for (let itemIndex = visibleRange.from; itemIndex < visibleRange.to; itemIndex++) {
-		const item = items[itemIndex];
-		if (pointMarkersRadius !== undefined) {
+	if (pointMarkersRadius !== undefined) {
+		const pointRadius = pointMarkersRadius + hitTestTolerance;
+		const pointCandidateFrom = lowerBound(items, x - pointRadius, lowerBoundByCoordinate, visibleRange.from, visibleRange.to);
+		const pointCandidateTo = upperBound(items, x + pointRadius, upperBoundByCoordinate, pointCandidateFrom, visibleRange.to);
+
+		for (let itemIndex = pointCandidateFrom; itemIndex < pointCandidateTo; itemIndex++) {
+			const item = items[itemIndex];
 			if (!isWithinHorizontalSweep(x, item.x, item.x, pointMarkersRadius + hitTestTolerance)) {
 				continue;
 			}
@@ -197,12 +220,16 @@ export function hitTestLineSeries(
 		if (distance <= radius) {
 			pointMinDistance = Math.min(pointMinDistance, distance);
 		}
-		return Number.isFinite(pointMinDistance) ? hoveredSeriesHitTestResult(pointMinDistance, HitTestPriority.Point) : null;
+		return Number.isFinite(pointMinDistance) ? hoveredSeriesHitTestResult(pointMinDistance, HitTestPriority.Point, 'series-point') : null;
 	}
 
 	let lineMinDistance = Number.POSITIVE_INFINITY;
+	const lineCandidateFrom = lowerBound(items, x - radius, lowerBoundByCoordinate, visibleRange.from, visibleRange.to);
+	const lineCandidateTo = upperBound(items, x + radius, upperBoundByCoordinate, lineCandidateFrom, visibleRange.to);
+	const segmentFrom = Math.max(visibleRange.from + 1, lineCandidateFrom);
+	const segmentTo = Math.min(visibleRange.to, lineCandidateTo + 1);
 
-	for (let itemIndex = visibleRange.from + 1; itemIndex < visibleRange.to; itemIndex++) {
+	for (let itemIndex = segmentFrom; itemIndex < segmentTo; itemIndex++) {
 		const previousItem = items[itemIndex - 1];
 		const currentItem = items[itemIndex];
 		const [leftX, rightX] = lineSegmentHorizontalBounds(previousItem, currentItem, lineType, items, itemIndex);
@@ -216,10 +243,10 @@ export function hitTestLineSeries(
 	}
 
 	if (Number.isFinite(pointMinDistance)) {
-		return hoveredSeriesHitTestResult(pointMinDistance, HitTestPriority.Point);
+		return hoveredSeriesHitTestResult(pointMinDistance, HitTestPriority.Point, 'series-point');
 	}
 
-	return Number.isFinite(lineMinDistance) ? hoveredSeriesHitTestResult(lineMinDistance, HitTestPriority.Line) : null;
+	return Number.isFinite(lineMinDistance) ? hoveredSeriesHitTestResult(lineMinDistance, HitTestPriority.Line, 'series-line') : null;
 }
 
 // eslint-disable-next-line max-params, complexity
@@ -230,15 +257,22 @@ export function hitTestSeriesRange<TItem extends TimedCoordinate>(
 	y: Coordinate,
 	barSpacing: number,
 	hitTestTolerance: number,
-	rangeProvider: (item: TItem) => [Coordinate, Coordinate]
+	rangeProvider: (item: TItem, out: [Coordinate, Coordinate]) => void
 ): InternalHitTestCandidate | null {
 	if (visibleRange === null || visibleRange.from >= visibleRange.to || items.length === 0) {
 		return null;
 	}
 
+	const horizontalRadius = barSpacing / 2 + hitTestTolerance;
+	const candidateFrom = lowerBound(items, x - horizontalRadius, lowerBoundByCoordinate, visibleRange.from, visibleRange.to);
+	const candidateTo = upperBound(items, x + horizontalRadius, upperBoundByCoordinate, candidateFrom, visibleRange.to);
+	if (candidateFrom >= candidateTo) {
+		return null;
+	}
+
 	let minDistance = Number.POSITIVE_INFINITY;
 
-	for (let itemIndex = visibleRange.from; itemIndex < visibleRange.to; itemIndex++) {
+	for (let itemIndex = candidateFrom; itemIndex < candidateTo; itemIndex++) {
 		const item = items[itemIndex];
 		const previousItem = itemIndex > visibleRange.from ? items[itemIndex - 1] : undefined;
 		const nextItem = itemIndex < visibleRange.to - 1 ? items[itemIndex + 1] : undefined;
@@ -249,7 +283,9 @@ export function hitTestSeriesRange<TItem extends TimedCoordinate>(
 			continue;
 		}
 
-		const [rangeStart, rangeEnd] = rangeProvider(item);
+		rangeProvider(item, rangePair);
+		const rangeStart = rangePair[0];
+		const rangeEnd = rangePair[1];
 		const actualTop = Math.min(rangeStart, rangeEnd);
 		const actualBottom = Math.max(rangeStart, rangeEnd);
 		const top = actualTop - hitTestTolerance;
@@ -266,7 +302,5 @@ export function hitTestSeriesRange<TItem extends TimedCoordinate>(
 		}
 	}
 
-	return Number.isFinite(minDistance) ? hoveredSeriesHitTestResult(minDistance, HitTestPriority.Range) : null;
+	return Number.isFinite(minDistance) ? hoveredSeriesHitTestResult(minDistance, HitTestPriority.Range, 'series-range') : null;
 }
-
-export { HitTestPriority, toLegacyHitTestResult };

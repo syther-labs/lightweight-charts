@@ -10,16 +10,7 @@ import { hitTestLineSeries } from '../../renderers/series-hit-test';
 export class SeriesLinePaneView extends LinePaneViewBase<'Line', LineStrokeItem, PaneRendererLine> {
 	protected readonly _renderer: PaneRendererLine = new PaneRendererLine();
 
-	public hitTest(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
-		if (!this._series.visible()) {
-			return null;
-		}
-
-		this._ensureValid();
-		if (this._itemsVisibleRange === null) {
-			return null;
-		}
-
+	protected override _hitTestImpl(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
 		const options = this._series.options();
 		return hitTestLineSeries(
 			this._items,
@@ -46,9 +37,6 @@ export class SeriesLinePaneView extends LinePaneViewBase<'Line', LineStrokeItem,
 
 		const data: PaneRendererLineData = {
 			items: this._items,
-			hitTestLineType: options.lineType,
-			hitTestLineWidth: options.lineVisible ? options.lineWidth : 1,
-			hitTestTolerance: options.hitTestTolerance,
 			lineStyle: options.lineStyle,
 			lineType: options.lineVisible ? options.lineType : undefined,
 			lineWidth: options.lineWidth,

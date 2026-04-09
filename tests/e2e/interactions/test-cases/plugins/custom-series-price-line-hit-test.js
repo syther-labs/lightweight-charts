@@ -64,8 +64,7 @@ class RangeOnlySeries {
 
 let clickPoint = null;
 let pass = false;
-let lastHoveredItem = null;
-let lastHoveredTarget = null;
+let lastHoveredInfo = null;
 let lastHoveredObjectId = null;
 let hoveredSeriesMatches = false;
 
@@ -118,20 +117,18 @@ function beforeInteractions(container) {
 			return;
 		}
 
-		lastHoveredItem = mouseParams.hoveredItem ?? null;
-		lastHoveredTarget = mouseParams.hoveredTarget ?? null;
+		lastHoveredInfo = mouseParams.hoveredInfo ?? null;
 		lastHoveredObjectId = mouseParams.hoveredObjectId ?? null;
 		hoveredSeriesMatches = mouseParams.hoveredSeries === customSeries;
 
 		if (
 			mouseParams.hoveredObjectId === 'CUSTOM-PRICE-LINE' &&
-			mouseParams.hoveredItem &&
-			mouseParams.hoveredItem.type === 'price-line' &&
-			mouseParams.hoveredTarget &&
-			mouseParams.hoveredTarget.sourceKind === 'series' &&
-			mouseParams.hoveredTarget.objectKind === 'custom-price-line' &&
-			mouseParams.hoveredTarget.objectId === 'CUSTOM-PRICE-LINE' &&
-			mouseParams.hoveredTarget.series === customSeries
+			mouseParams.hoveredInfo &&
+			mouseParams.hoveredInfo.type === 'price-line' &&
+			mouseParams.hoveredInfo.sourceKind === 'series' &&
+			mouseParams.hoveredInfo.objectKind === 'custom-price-line' &&
+			mouseParams.hoveredInfo.objectId === 'CUSTOM-PRICE-LINE' &&
+			mouseParams.hoveredInfo.series === customSeries
 		) {
 			pass = true;
 		}
@@ -161,7 +158,7 @@ function afterInitialInteractions() {
 
 function afterFinalInteractions() {
 	if (!pass) {
-		throw new Error(`Expected custom-series price line hit to preserve price-line semantics. hoveredSeriesMatches=${String(hoveredSeriesMatches)} hoveredObjectId=${String(lastHoveredObjectId)} hoveredItem=${JSON.stringify(lastHoveredItem)} hoveredTarget=${JSON.stringify(lastHoveredTarget)}`);
+		throw new Error(`Expected custom-series price line hit to preserve price-line semantics. hoveredSeriesMatches=${String(hoveredSeriesMatches)} hoveredObjectId=${String(lastHoveredObjectId)} hoveredInfo=${JSON.stringify(lastHoveredInfo)}`);
 	}
 
 	return Promise.resolve();

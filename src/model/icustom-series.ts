@@ -118,9 +118,9 @@ export interface CustomSeriesHitTestResult {
 	 * Geometric classification of the hit.
 	 *
 	 * This is used by the library to compare the custom hit against other
-	 * overlapping hits. It does not change the public `hoveredItem.type`, which
+	 * overlapping hits. It does not change the public `hoveredInfo.type`, which
 	 * remains `custom` for custom-series hits. Use `objectId` (and
-	 * `hoveredTarget.objectKind`) to identify specific custom objects.
+	 * `hoveredInfo.objectKind`) to identify specific custom objects.
 	 */
 	type?: 'point' | 'line' | 'range' | 'custom';
 	/**

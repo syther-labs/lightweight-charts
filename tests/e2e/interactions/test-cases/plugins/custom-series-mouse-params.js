@@ -357,8 +357,7 @@ function finalInteractionsToPerform() {
 let pass = false;
 let hoveredSeriesMatches = false;
 let customHitTestUsed = false;
-let lastHoveredTarget = null;
-let lastHoveredItem = null;
+let lastHoveredInfo = null;
 
 function isExpectedCustomHover(mouseParams, myCustomSeries) {
 	const csdata = mouseParams.seriesData.get(myCustomSeries);
@@ -370,14 +369,12 @@ function isExpectedCustomHover(mouseParams, myCustomSeries) {
 		csdata.quartiles &&
 		csdata.quartiles.length === 5 &&
 		csdata.time &&
-		mouseParams.hoveredItem &&
-		mouseParams.hoveredItem.type === 'custom' &&
-		mouseParams.hoveredItem.objectId === 'outlier-100' &&
-		mouseParams.hoveredTarget &&
-		mouseParams.hoveredTarget.sourceKind === 'series' &&
-		mouseParams.hoveredTarget.objectKind === 'custom-object' &&
-		mouseParams.hoveredTarget.series === myCustomSeries &&
-		mouseParams.hoveredTarget.objectId === 'outlier-100' &&
+		mouseParams.hoveredInfo &&
+		mouseParams.hoveredInfo.type === 'custom' &&
+		mouseParams.hoveredInfo.sourceKind === 'series' &&
+		mouseParams.hoveredInfo.objectKind === 'custom-object' &&
+		mouseParams.hoveredInfo.series === myCustomSeries &&
+		mouseParams.hoveredInfo.objectId === 'outlier-100' &&
 		mouseParams.hoveredObjectId === 'outlier-100'
 	);
 }
@@ -404,8 +401,7 @@ function beforeInteractions(container) {
 		if (!mouseParams) {
 			return;
 		}
-		lastHoveredTarget = mouseParams.hoveredTarget ?? null;
-		lastHoveredItem = mouseParams.hoveredItem ?? null;
+		lastHoveredInfo = mouseParams.hoveredInfo ?? null;
 		hoveredSeriesMatches = mouseParams.hoveredSeries === myCustomSeries;
 		if (isExpectedCustomHover(mouseParams, myCustomSeries)) {
 			pass = true;
@@ -438,7 +434,7 @@ function afterInitialInteractions() {
 
 function afterFinalInteractions() {
 	if (!pass) {
-		throw new Error(`Expected custom series hover to preserve custom hover semantics. hoveredSeriesMatches=${String(hoveredSeriesMatches)} hoveredItem=${JSON.stringify(lastHoveredItem)} hoveredTarget=${JSON.stringify(lastHoveredTarget)} customHitTestUsed=${String(customHitTestUsed)}`);
+		throw new Error(`Expected custom series hover to preserve custom hover semantics. hoveredSeriesMatches=${String(hoveredSeriesMatches)} hoveredInfo=${JSON.stringify(lastHoveredInfo)} customHitTestUsed=${String(customHitTestUsed)}`);
 	}
 	if (!hoveredSeriesMatches) {
 		throw new Error('Expected hoveredSeries to match the custom series.');

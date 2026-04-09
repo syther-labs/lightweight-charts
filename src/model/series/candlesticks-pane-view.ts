@@ -14,16 +14,7 @@ import { BarsPaneViewBase } from './bars-pane-view-base';
 export class SeriesCandlesticksPaneView extends BarsPaneViewBase<'Candlestick', CandlestickItem, PaneRendererCandlesticks> {
 	protected readonly _renderer: PaneRendererCandlesticks = new PaneRendererCandlesticks();
 
-	public hitTest(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
-		if (!this._series.visible()) {
-			return null;
-		}
-
-		this._ensureValid();
-		if (this._itemsVisibleRange === null) {
-			return null;
-		}
-
+	protected override _hitTestImpl(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
 		return hitTestSeriesRange(
 			this._items,
 			this._itemsVisibleRange,
@@ -31,7 +22,10 @@ export class SeriesCandlesticksPaneView extends BarsPaneViewBase<'Candlestick', 
 			y,
 			this._model.timeScale().barSpacing(),
 			this._series.options().hitTestTolerance,
-			(bar: CandlestickItem) => [bar.highY, bar.lowY]
+			(bar: CandlestickItem, out: [Coordinate, Coordinate]) => {
+				out[0] = bar.highY;
+				out[1] = bar.lowY;
+			}
 		);
 	}
 
@@ -48,7 +42,6 @@ export class SeriesCandlesticksPaneView extends BarsPaneViewBase<'Candlestick', 
 		this._renderer.setData({
 			bars: this._items,
 			barSpacing: this._model.timeScale().barSpacing(),
-			hitTestTolerance: candlestickStyleProps.hitTestTolerance,
 			wickVisible: candlestickStyleProps.wickVisible,
 			borderVisible: candlestickStyleProps.borderVisible,
 			visibleRange: this._itemsVisibleRange,

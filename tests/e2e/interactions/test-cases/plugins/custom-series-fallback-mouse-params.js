@@ -65,8 +65,7 @@ class RangeOnlySeries {
 let clickPoint = null;
 let pass = false;
 let hoveredSeriesMatches = false;
-let lastHoveredItem = null;
-let lastHoveredTarget = null;
+let lastHoveredInfo = null;
 let lastHoveredObjectId = null;
 
 function isExpectedFallbackHover(mouseParams, customSeries) {
@@ -80,14 +79,12 @@ function isExpectedFallbackHover(mouseParams, customSeries) {
 		csData.low === 20 &&
 		mouseParams.hoveredSeries === customSeries &&
 		mouseParams.hoveredObjectId === undefined &&
-		mouseParams.hoveredItem &&
-		mouseParams.hoveredItem.type === 'custom' &&
-		mouseParams.hoveredItem.objectId === undefined &&
-		mouseParams.hoveredTarget &&
-		mouseParams.hoveredTarget.sourceKind === 'series' &&
-		mouseParams.hoveredTarget.objectKind === 'series' &&
-		mouseParams.hoveredTarget.series === customSeries &&
-		mouseParams.hoveredTarget.objectId === undefined
+		mouseParams.hoveredInfo &&
+		mouseParams.hoveredInfo.type === 'custom' &&
+		mouseParams.hoveredInfo.sourceKind === 'series' &&
+		mouseParams.hoveredInfo.objectKind === 'series' &&
+		mouseParams.hoveredInfo.series === customSeries &&
+		mouseParams.hoveredInfo.objectId === undefined
 	);
 }
 
@@ -134,8 +131,7 @@ function beforeInteractions(container) {
 			return;
 		}
 
-		lastHoveredItem = mouseParams.hoveredItem ?? null;
-		lastHoveredTarget = mouseParams.hoveredTarget ?? null;
+		lastHoveredInfo = mouseParams.hoveredInfo ?? null;
 		lastHoveredObjectId = mouseParams.hoveredObjectId ?? null;
 		hoveredSeriesMatches = mouseParams.hoveredSeries === customSeries;
 
@@ -168,7 +164,7 @@ function afterInitialInteractions() {
 
 function afterFinalInteractions() {
 	if (!pass) {
-		throw new Error(`Expected fallback custom-series hit testing to populate hovered series payloads. hoveredSeriesMatches=${String(hoveredSeriesMatches)} hoveredObjectId=${String(lastHoveredObjectId)} hoveredItem=${JSON.stringify(lastHoveredItem)} hoveredTarget=${JSON.stringify(lastHoveredTarget)}`);
+		throw new Error(`Expected fallback custom-series hit testing to populate hovered series payloads. hoveredSeriesMatches=${String(hoveredSeriesMatches)} hoveredObjectId=${String(lastHoveredObjectId)} hoveredInfo=${JSON.stringify(lastHoveredInfo)}`);
 	}
 
 	if (!hoveredSeriesMatches) {
