@@ -1,12 +1,12 @@
-import { HoveredItemType, HoveredSource } from '../model/chart-model';
+import { HoveredItemType, HoveredSource, ObjectKind, SourceKind } from '../model/chart-model';
 import { Pane } from '../model/pane';
 import { Series } from '../model/series';
 import { SeriesType } from '../model/series-options';
 
 export interface HoveredInfoImpl {
 	type: HoveredItemType;
-	sourceKind: 'series' | 'series-primitive' | 'pane-primitive';
-	objectKind: 'series' | 'custom-object' | 'custom-price-line' | 'series-marker' | 'primitive';
+	sourceKind: SourceKind;
+	objectKind: ObjectKind;
 	series?: Series<SeriesType>;
 	objectId?: unknown;
 	paneIndex?: number;
@@ -21,7 +21,7 @@ export interface HoveredEventInfoImpl {
 function hoveredTargetSourceKind(
 	source: HoveredSource['source'],
 	itemType: HoveredItemType
-): HoveredInfoImpl['sourceKind'] {
+): SourceKind {
 	if (source instanceof Pane) {
 		return 'pane-primitive';
 	}
@@ -36,7 +36,7 @@ function hoveredTargetSourceKind(
 function hoveredTargetObjectKind(
 	itemType: HoveredItemType,
 	objectId: unknown
-): HoveredInfoImpl['objectKind'] {
+): ObjectKind {
 	switch (itemType) {
 		case 'custom':
 			return objectId !== undefined ? 'custom-object' : 'series';

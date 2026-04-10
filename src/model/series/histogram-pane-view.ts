@@ -6,7 +6,7 @@ import { InternalHitTestCandidate } from '../../model/internal-hit-test';
 import { ISeriesBarColorer } from '../../model/series-bar-colorer';
 import { TimePointIndex } from '../../model/time-data';
 import { HistogramItem, PaneRendererHistogram, PaneRendererHistogramData } from '../../renderers/histogram-renderer';
-import { hitTestSeriesRange } from '../../renderers/series-hit-test';
+import { hitTestSeriesRange } from '../../renderers/range-hit-test';
 
 import { LinePaneViewBase } from './line-pane-view-base';
 

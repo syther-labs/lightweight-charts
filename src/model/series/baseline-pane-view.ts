@@ -1,18 +1,15 @@
 import { BarPrice } from '../../model/bar';
 import { IChartModelBase } from '../../model/chart-model';
-import { Coordinate } from '../../model/coordinate';
-import { InternalHitTestCandidate } from '../../model/internal-hit-test';
 import { ISeries } from '../../model/iseries';
 import { ISeriesBarColorer } from '../../model/series-bar-colorer';
 import { TimePointIndex } from '../../model/time-data';
 import { BaselineFillItem, PaneRendererBaselineArea } from '../../renderers/baseline-renderer-area';
 import { BaselineStrokeItem, PaneRendererBaselineLine } from '../../renderers/baseline-renderer-line';
 import { CompositeRenderer } from '../../renderers/composite-renderer';
-import { hitTestLineSeries } from '../../renderers/series-hit-test';
 
-import { LinePaneViewBase } from './line-pane-view-base';
+import { LineHitTestPaneViewBase } from './line-hit-test-pane-view-base';
 
-export class SeriesBaselinePaneView extends LinePaneViewBase<'Baseline', BaselineFillItem & BaselineStrokeItem, CompositeRenderer> {
+export class SeriesBaselinePaneView extends LineHitTestPaneViewBase<'Baseline', BaselineFillItem & BaselineStrokeItem, CompositeRenderer> {
 	protected readonly _renderer: CompositeRenderer = new CompositeRenderer();
 	private readonly _baselineAreaRenderer: PaneRendererBaselineArea = new PaneRendererBaselineArea();
 	private readonly _baselineLineRenderer: PaneRendererBaselineLine = new PaneRendererBaselineLine();
@@ -20,21 +17,6 @@ export class SeriesBaselinePaneView extends LinePaneViewBase<'Baseline', Baselin
 	public constructor(series: ISeries<'Baseline'>, model: IChartModelBase) {
 		super(series, model);
 		this._renderer.setRenderers([this._baselineAreaRenderer, this._baselineLineRenderer]);
-	}
-
-	protected override _hitTestImpl(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
-		const options = this._series.options();
-		return hitTestLineSeries(
-			this._items,
-			this._itemsVisibleRange,
-			x,
-			y,
-			options.lineType,
-			options.lineVisible ? options.lineWidth : 1,
-			options.pointMarkersVisible ? (options.pointMarkersRadius || options.lineWidth / 2 + 2) : undefined,
-			this._model.timeScale().barSpacing(),
-			options.hitTestTolerance
-		);
 	}
 
 	protected _createRawItem(time: TimePointIndex, price: BarPrice, colorer: ISeriesBarColorer<'Baseline'>): BaselineFillItem & BaselineStrokeItem {

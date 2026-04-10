@@ -1,65 +1,12 @@
-import { lowerBound, upperBound } from '../helpers/algorithms';
-
 import { Coordinate } from '../model/coordinate';
 import { HitTestPriority, InternalHitTestCandidate } from '../model/internal-hit-test';
-import { SeriesItemsIndexesRange, TimedValue } from '../model/time-data';
+import { SeriesItemsIndexesRange } from '../model/time-data';
 
 import { LinePoint, LineType } from './draw-line';
+import { distanceToSegment, hoveredSeriesHitTestResult, isWithinHorizontalSweep, lowerBoundByX, upperBoundByX } from './hit-test-common';
 import { getControlPoints } from './walk-line';
 
 const BEZIER_APPROXIMATION_STEPS = 12;
-const rangePair: [Coordinate, Coordinate] = [0 as Coordinate, 0 as Coordinate];
-
-interface TimedCoordinate extends TimedValue {
-	x: Coordinate;
-}
-
-interface XCoordinate {
-	x: Coordinate;
-}
-
-function lowerBoundByCoordinate(item: XCoordinate, value: number): boolean {
-	return item.x < value;
-}
-
-function upperBoundByCoordinate(item: XCoordinate, value: number): boolean {
-	return value < item.x;
-}
-
-function hoveredSeriesHitTestResult(
-	distance: number,
-	priority: HitTestPriority,
-	itemType: InternalHitTestCandidate['itemType']
-): InternalHitTestCandidate {
-	return { distance, priority, itemType };
-}
-
-function isWithinHorizontalSweep(x: number, left: number, right: number, radius: number): boolean {
-	return x >= left - radius && x <= right + radius;
-}
-
-function distanceToSegment(
-	x: number,
-	y: number,
-	x1: number,
-	y1: number,
-	x2: number,
-	y2: number
-): number {
-	const deltaX = x2 - x1;
-	const deltaY = y2 - y1;
-
-	if (deltaX === 0 && deltaY === 0) {
-		return Math.hypot(x - x1, y - y1);
-	}
-
-	const projection = ((x - x1) * deltaX + (y - y1) * deltaY) / (deltaX * deltaX + deltaY * deltaY);
-	const clampedProjection = Math.max(0, Math.min(1, projection));
-	const closestX = x1 + deltaX * clampedProjection;
-	const closestY = y1 + deltaY * clampedProjection;
-
-	return Math.hypot(x - closestX, y - closestY);
-}
 
 function cubicBezierPoint(
 	p0: number,
@@ -120,30 +67,6 @@ function lineSegmentHorizontalBounds(
 	}
 }
 
-function slotStart(
-	item: TimedCoordinate,
-	previousItem: TimedCoordinate | undefined,
-	barSpacing: number
-): number {
-	if (previousItem === undefined || previousItem.time !== item.time - 1) {
-		return item.x - barSpacing / 2;
-	}
-
-	return (previousItem.x + item.x) / 2;
-}
-
-function slotEnd(
-	item: TimedCoordinate,
-	nextItem: TimedCoordinate | undefined,
-	barSpacing: number
-): number {
-	if (nextItem === undefined || nextItem.time !== item.time + 1) {
-		return item.x + barSpacing / 2;
-	}
-
-	return (item.x + nextItem.x) / 2;
-}
-
 // eslint-disable-next-line max-params
 function hitTestLineSegment(
 	x: Coordinate,
@@ -198,8 +121,8 @@ export function hitTestLineSeries(
 
 	if (pointMarkersRadius !== undefined) {
 		const pointRadius = pointMarkersRadius + hitTestTolerance;
-		const pointCandidateFrom = lowerBound(items, x - pointRadius, lowerBoundByCoordinate, visibleRange.from, visibleRange.to);
-		const pointCandidateTo = upperBound(items, x + pointRadius, upperBoundByCoordinate, pointCandidateFrom, visibleRange.to);
+		const pointCandidateFrom = lowerBoundByX(items, x - pointRadius, visibleRange.from, visibleRange.to);
+		const pointCandidateTo = upperBoundByX(items, x + pointRadius, pointCandidateFrom, visibleRange.to);
 
 		for (let itemIndex = pointCandidateFrom; itemIndex < pointCandidateTo; itemIndex++) {
 			const item = items[itemIndex];
@@ -224,8 +147,8 @@ export function hitTestLineSeries(
 	}
 
 	let lineMinDistance = Number.POSITIVE_INFINITY;
-	const lineCandidateFrom = lowerBound(items, x - radius, lowerBoundByCoordinate, visibleRange.from, visibleRange.to);
-	const lineCandidateTo = upperBound(items, x + radius, upperBoundByCoordinate, lineCandidateFrom, visibleRange.to);
+	const lineCandidateFrom = lowerBoundByX(items, x - radius, visibleRange.from, visibleRange.to);
+	const lineCandidateTo = upperBoundByX(items, x + radius, lineCandidateFrom, visibleRange.to);
 	const segmentFrom = Math.max(visibleRange.from + 1, lineCandidateFrom);
 	const segmentTo = Math.min(visibleRange.to, lineCandidateTo + 1);
 
@@ -247,60 +170,4 @@ export function hitTestLineSeries(
 	}
 
 	return Number.isFinite(lineMinDistance) ? hoveredSeriesHitTestResult(lineMinDistance, HitTestPriority.Line, 'series-line') : null;
-}
-
-// eslint-disable-next-line max-params, complexity
-export function hitTestSeriesRange<TItem extends TimedCoordinate>(
-	items: readonly TItem[],
-	visibleRange: SeriesItemsIndexesRange | null,
-	x: Coordinate,
-	y: Coordinate,
-	barSpacing: number,
-	hitTestTolerance: number,
-	rangeProvider: (item: TItem, out: [Coordinate, Coordinate]) => void
-): InternalHitTestCandidate | null {
-	if (visibleRange === null || visibleRange.from >= visibleRange.to || items.length === 0) {
-		return null;
-	}
-
-	const horizontalRadius = barSpacing / 2 + hitTestTolerance;
-	const candidateFrom = lowerBound(items, x - horizontalRadius, lowerBoundByCoordinate, visibleRange.from, visibleRange.to);
-	const candidateTo = upperBound(items, x + horizontalRadius, upperBoundByCoordinate, candidateFrom, visibleRange.to);
-	if (candidateFrom >= candidateTo) {
-		return null;
-	}
-
-	let minDistance = Number.POSITIVE_INFINITY;
-
-	for (let itemIndex = candidateFrom; itemIndex < candidateTo; itemIndex++) {
-		const item = items[itemIndex];
-		const previousItem = itemIndex > visibleRange.from ? items[itemIndex - 1] : undefined;
-		const nextItem = itemIndex < visibleRange.to - 1 ? items[itemIndex + 1] : undefined;
-		const leftBoundary = slotStart(item, previousItem, barSpacing) - hitTestTolerance;
-		const rightBoundary = slotEnd(item, nextItem, barSpacing) + hitTestTolerance;
-
-		if (x < leftBoundary || x > rightBoundary) {
-			continue;
-		}
-
-		rangeProvider(item, rangePair);
-		const rangeStart = rangePair[0];
-		const rangeEnd = rangePair[1];
-		const actualTop = Math.min(rangeStart, rangeEnd);
-		const actualBottom = Math.max(rangeStart, rangeEnd);
-		const top = actualTop - hitTestTolerance;
-		const bottom = actualBottom + hitTestTolerance;
-
-		if (y >= actualTop && y <= actualBottom) {
-			minDistance = Math.min(minDistance, 0);
-			continue;
-		}
-
-		if (y >= top && y <= bottom) {
-			const distance = Math.min(Math.abs(y - actualTop), Math.abs(actualBottom - y));
-			minDistance = Math.min(minDistance, distance);
-		}
-	}
-
-	return Number.isFinite(minDistance) ? hoveredSeriesHitTestResult(minDistance, HitTestPriority.Range, 'series-range') : null;
 }

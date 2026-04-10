@@ -5,7 +5,7 @@ import { undefinedIfNull } from '../../helpers/strict-type-checks';
 import { Coordinate } from '../../model/coordinate';
 import { HitTestPriority, InternalHitTestCandidate } from '../../model/internal-hit-test';
 import { IPaneRenderer } from '../../renderers/ipane-renderer';
-import { hitTestSeriesRange } from '../../renderers/series-hit-test';
+import { hitTestSeriesRange } from '../../renderers/range-hit-test';
 
 import { IChartModelBase } from '../chart-model';
 import {
