@@ -559,6 +559,7 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 		if (
 			this._hoveredSource?.source === source?.source &&
 			this._hoveredSource?.object?.externalId === source?.object?.externalId &&
+			this._hoveredSource?.object?.hitTestData === source?.object?.hitTestData &&
 			this._hoveredSource?.cursorStyle === source?.cursorStyle &&
 			this._hoveredSource?.itemType === source?.itemType
 		) {
