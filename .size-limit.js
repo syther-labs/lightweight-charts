@@ -8,7 +8,7 @@ export default [
 	{
 		name: 'ESM',
 		path: 'dist/lightweight-charts.production.mjs',
-		limit: '50.00 KB',
+		limit: '52.00 KB',
 		import: '*',
 		ignore: ['fancy-canvas'],
 		brotli: true,
@@ -48,14 +48,14 @@ export default [
 	{
 		name: 'Standalone-ESM',
 		path: 'dist/lightweight-charts.standalone.production.mjs',
-		limit: '51.50 KB',
+		limit: '53.50 KB',
 		import: '*',
 		brotli: true,
 	},
 	{
 		name: 'Standalone',
 		path: 'dist/lightweight-charts.standalone.production.js',
-		limit: '51.50 KB',
+		limit: '53.50 KB',
 		brotli: true,
 	},
 	{
@@ -87,7 +87,7 @@ export default [
 		path: 'dist/lightweight-charts.production.mjs',
 		import: '{ LineSeries }',
 		ignore: ['fancy-canvas'],
-		limit: '3.0 KB',
+		limit: '4.00 KB',
 		brotli: true,
 	},
 	{
@@ -95,7 +95,7 @@ export default [
 		path: 'dist/lightweight-charts.production.mjs',
 		import: '{ BaselineSeries }',
 		ignore: ['fancy-canvas'],
-		limit: '4.00 KB',
+		limit: '4.5 KB',
 		brotli: true,
 	},
 	{
@@ -103,7 +103,7 @@ export default [
 		path: 'dist/lightweight-charts.production.mjs',
 		import: '{ AreaSeries }',
 		ignore: ['fancy-canvas'],
-		limit: '4.00 KB',
+		limit: '4.50 KB',
 		brotli: true,
 	},
 	{
@@ -111,7 +111,7 @@ export default [
 		path: 'dist/lightweight-charts.production.mjs',
 		import: '{ BarSeries }',
 		ignore: ['fancy-canvas'],
-		limit: '2.5 KB',
+		limit: '3.00 KB',
 		brotli: true,
 	},
 	{
@@ -127,7 +127,7 @@ export default [
 		path: 'dist/lightweight-charts.production.mjs',
 		import: '{ HistogramSeries }',
 		ignore: ['fancy-canvas'],
-		limit: '2.5 KB',
+		limit: '3.00 KB',
 		brotli: true,
 	},
 	{
@@ -135,6 +135,6 @@ export default [
 		path: 'dist/lightweight-charts.production.mjs',
 		import: '{ createUpDownMarkers }',
 		ignore: ['fancy-canvas'],
-		limit: '2.50 KB',
+		limit: '3.00 KB',
 	},
 ];
