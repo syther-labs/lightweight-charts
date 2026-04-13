@@ -18,5 +18,7 @@ function beforeInteractions(container) {
 
 function afterInteractions() {
 	chart.takeScreenshot();
+	chart.takeScreenshot(true);
+	chart.takeScreenshot(true, true);
 	return Promise.resolve();
 }

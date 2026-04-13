@@ -7,9 +7,9 @@ import { AreaFillItem, PaneRendererArea } from '../../renderers/area-renderer';
 import { CompositeRenderer } from '../../renderers/composite-renderer';
 import { LineStrokeItem, PaneRendererLine } from '../../renderers/line-renderer';
 
-import { LinePaneViewBase } from './line-pane-view-base';
+import { LineHitTestPaneViewBase } from './line-hit-test-pane-view-base';
 
-export class SeriesAreaPaneView extends LinePaneViewBase<'Area', AreaFillItem & LineStrokeItem, CompositeRenderer> {
+export class SeriesAreaPaneView extends LineHitTestPaneViewBase<'Area', AreaFillItem & LineStrokeItem, CompositeRenderer> {
 	protected readonly _renderer: CompositeRenderer = new CompositeRenderer();
 	private readonly _areaRenderer: PaneRendererArea = new PaneRendererArea();
 	private readonly _lineRenderer: PaneRendererLine = new PaneRendererLine();

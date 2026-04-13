@@ -17,12 +17,24 @@ function initialInteractionsToPerform() {
 }
 
 function finalInteractionsToPerform() {
-	return [{ action: 'click' }];
+	if (clickPoint === null) {
+		return [];
+	}
+
+	return [{
+		action: 'clickXY',
+		target: 'pane',
+		options: clickPoint,
+	}];
 }
 
 let chart;
 let createdPriceLine = false;
 let pass = false;
+let lastHoveredObjectId = null;
+let lastHoveredSeriesMatched = false;
+let lastHoveredInfo = null;
+let clickPoint = null;
 
 function beforeInteractions(container) {
 	chart = LightweightCharts.createChart(container);
@@ -35,7 +47,18 @@ function beforeInteractions(container) {
 		if (!mouseParams) {
 			return;
 		}
-		if (mouseParams.hoveredObjectId === 'TEST') {
+		lastHoveredObjectId = mouseParams.hoveredObjectId ?? null;
+		lastHoveredSeriesMatched = mouseParams.hoveredSeries === mainSeries;
+		lastHoveredInfo = mouseParams.hoveredInfo ?? null;
+		if (
+			mouseParams.hoveredObjectId === 'TEST' &&
+			mouseParams.hoveredInfo &&
+			mouseParams.hoveredInfo.type === 'price-line' &&
+			mouseParams.hoveredInfo.sourceKind === 'series' &&
+			mouseParams.hoveredInfo.objectKind === 'custom-price-line' &&
+			mouseParams.hoveredInfo.objectId === 'TEST' &&
+			mouseParams.hoveredInfo.series === mainSeries
+		) {
 			pass = true;
 			return;
 		}
@@ -51,6 +74,10 @@ function beforeInteractions(container) {
 				id: 'TEST',
 			};
 			mainSeries.createPriceLine(myPriceLine);
+			clickPoint = {
+				x: Math.round(mouseParams.point.x),
+				y: Math.round(mainSeries.priceToCoordinate(price)),
+			};
 			createdPriceLine = true;
 		}
 	});
@@ -76,7 +103,7 @@ function afterFinalInteractions() {
 	}
 
 	if (!pass) {
-		throw new Error("Expected hoveredObjectId to be equal to 'TEST'.");
+		throw new Error(`Expected hoveredObjectId to be equal to 'TEST'. Received ${String(lastHoveredObjectId)}. hoveredSeriesMatched=${String(lastHoveredSeriesMatched)} hoveredInfo=${JSON.stringify(lastHoveredInfo)}.`);
 	}
 
 	return Promise.resolve();

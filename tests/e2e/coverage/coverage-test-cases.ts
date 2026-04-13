@@ -42,7 +42,7 @@ const testStandalonePath: string = process.env[testStandalonePathEnvKey] || '';
 interface InternalWindow {
 	interactions: Interaction[];
 	finishedSetup: Promise<() => void>;
-	afterInteractions: () => void;
+	afterInteractions: () => void | Promise<void>;
 }
 
 function rmRf(dir: string): void {
@@ -207,9 +207,9 @@ void describe('Coverage tests', (): void => {
 
 			await performInteractions(page, interactionsToPerform);
 
-			await page.evaluate(() => {
+			await page.evaluate(async () => {
+				await (window as unknown as InternalWindow).afterInteractions();
 				return new Promise<void>((resolveTwo: () => void) => {
-					(window as unknown as InternalWindow).afterInteractions();
 					window.requestAnimationFrame(() => {
 						setTimeout(resolveTwo, 50);
 					});

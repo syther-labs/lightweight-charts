@@ -72,6 +72,7 @@ export class SeriesMarkersRenderer implements IPrimitivePaneRenderer {
 				return {
 					zOrder: 'normal',
 					externalId: item.externalId ?? '',
+					itemType: 'marker',
 				};
 			}
 		}

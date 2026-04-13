@@ -3,6 +3,7 @@ import { undefinedIfNull } from '../../helpers/strict-type-checks';
 import { BarPrice } from '../../model/bar';
 import { IChartModelBase } from '../../model/chart-model';
 import { Coordinate } from '../../model/coordinate';
+import { InternalHitTestCandidate } from '../../model/internal-hit-test';
 import { ISeries } from '../../model/iseries';
 import { PlotRowValueIndex } from '../../model/plot-data';
 import { PriceScale } from '../../model/price-scale';
@@ -12,12 +13,28 @@ import { TimePointIndex } from '../../model/time-data';
 import { ITimeScale } from '../../model/time-scale';
 import { BarCandlestickItemBase } from '../../renderers/bars-renderer';
 import { IPaneRenderer } from '../../renderers/ipane-renderer';
+import { hitTestSeriesRange } from '../../renderers/range-hit-test';
 
 import { SeriesPaneViewBase } from './series-pane-view-base';
 
 export abstract class BarsPaneViewBase<TSeriesType extends 'Bar' | 'Candlestick', ItemType extends BarCandlestickItemBase, TRenderer extends IPaneRenderer> extends SeriesPaneViewBase<TSeriesType, ItemType, TRenderer> {
 	public constructor(series: ISeries<TSeriesType>, model: IChartModelBase) {
 		super(series, model, false);
+	}
+
+	protected override _hitTestImpl(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
+		return hitTestSeriesRange(
+			this._items,
+			this._itemsVisibleRange,
+			x,
+			y,
+			this._model.timeScale().barSpacing(),
+			this._series.options().hitTestTolerance,
+			(bar: ItemType, out: [Coordinate, Coordinate]) => {
+				out[0] = bar.highY;
+				out[1] = bar.lowY;
+			}
+		);
 	}
 
 	protected _convertToCoordinates(priceScale: PriceScale, timeScale: ITimeScale, firstValue: number): void {

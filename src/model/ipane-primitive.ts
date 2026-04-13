@@ -2,6 +2,8 @@ import { CanvasRenderingTarget2D } from 'fancy-canvas';
 
 import { LineStyle } from '../renderers/draw-line';
 
+import { HoveredItemType } from './chart-model';
+
 /**
  * This interface represents rendering some element on the canvas
  */
@@ -81,6 +83,25 @@ export interface IPanePrimitivePaneView {
  */
 export interface PrimitiveHoveredItem {
 	/**
+	 * Geometric distance from the cursor to the hovered primitive, in CSS pixels.
+	 * Lower values win over higher values for hits on the same z-order layer.
+	 */
+	distance?: number;
+	/**
+	 * Optional hit priority used when comparing overlapping primitive hits on the
+	 * same z-order layer.
+	 *
+	 * Recommended values:
+	 * - `0` for range-style hits such as covered regions
+	 * - `1` for line-style hits such as strokes
+	 * - `2` for point-style hits such as explicit markers
+	 *
+	 * Point-style hits receive special precedence over non-point hits. Otherwise
+	 * distance decides, and equal-distance non-point ties preserve the existing
+	 * visual/source order.
+	 */
+	hitTestPriority?: number;
+	/**
 	 * CSS cursor style as defined here: [MDN: CSS Cursor](https://developer.mozilla.org/en-US/docs/Web/CSS/cursor) or `undefined`
 	 * if you want the library to use the default cursor style instead.
 	 */
@@ -97,6 +118,13 @@ export interface PrimitiveHoveredItem {
 	 * Set to true if the object is rendered using `drawBackground` instead of `draw`.
 	 */
 	isBackground?: boolean;
+	/**
+	 * Optional public-facing hover item type hint.
+	 *
+	 * This should normally be `'marker'` for marker-like primitive hits or
+	 * `'primitive'` for all other primitive-owned objects.
+	 */
+	itemType?: Extract<HoveredItemType, 'marker' | 'primitive'>;
 }
 
 /**

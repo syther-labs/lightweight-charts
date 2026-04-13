@@ -16,7 +16,11 @@ let barData;
 let lastTime;
 
 function beforeInteractions(container) {
-	chart = LightweightCharts.createChart(container);
+	chart = LightweightCharts.createChart(container, {
+		timeScale: {
+			shiftVisibleRangeOnNewBar: false,
+		},
+	});
 
 	lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
 		lastPriceAnimation: LightweightCharts.LastPriceAnimationMode.Continuous,

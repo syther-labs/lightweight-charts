@@ -165,15 +165,38 @@ export interface AxisDoubleClickOptions {
 	price: boolean;
 }
 
+/**
+ * Hovered object metadata passed through mouse-event APIs and hover rendering.
+ */
 export interface HoveredObject {
+	/**
+	 * Optional renderer-defined hover payload.
+	 */
 	hitTestData?: unknown;
+	/**
+	 * Optional public object identifier.
+	 */
 	externalId?: string;
 }
+
+export type HoveredItemType =
+	| 'series-point'
+	| 'series-line'
+	| 'series-range'
+	| 'marker'
+	| 'price-line'
+	| 'primitive'
+	| 'custom';
+
+export type SourceKind = 'series' | 'series-primitive' | 'pane-primitive';
+
+export type ObjectKind = 'series' | 'custom-object' | 'custom-price-line' | 'series-marker' | 'primitive';
 
 export interface HoveredSource {
 	source: IPriceDataSource | IPrimitiveHitTestSource;
 	object?: HoveredObject;
 	cursorStyle?: string | null;
+	itemType?: HoveredItemType;
 }
 
 export interface PriceScaleOnPane {
@@ -334,6 +357,16 @@ export interface ChartOptionsBase {
 	 * @defaultValue `true`
 	 */
 	addDefaultPane: boolean;
+
+	/**
+	 * Whether to draw the currently hovered series above the other series in the same pane.
+	 *
+	 * This only affects drawing and hit-testing order while the series is hovered; it doesn't
+	 * change the stored series order.
+	 *
+	 * @defaultValue `true`
+	 */
+	hoveredSeriesOnTop: boolean;
 }
 
 /**
@@ -523,7 +556,13 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 	}
 
 	public setHoveredSource(source: HoveredSource | null): void {
-		if (this._hoveredSource?.source === source?.source && this._hoveredSource?.object?.externalId === source?.object?.externalId) {
+		if (
+			this._hoveredSource?.source === source?.source &&
+			this._hoveredSource?.object?.externalId === source?.object?.externalId &&
+			this._hoveredSource?.object?.hitTestData === source?.object?.hitTestData &&
+			this._hoveredSource?.cursorStyle === source?.cursorStyle &&
+			this._hoveredSource?.itemType === source?.itemType
+		) {
 			return;
 		}
 		const prevSource = this._hoveredSource;
@@ -858,7 +897,12 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 		this.cursorUpdate();
 		if (!skipEvent) {
 			const hitTest = hitTestPane(pane, x, y);
-			this.setHoveredSource(hitTest && { source: hitTest.source, object: hitTest.object, cursorStyle: hitTest.cursorStyle || null });
+			this.setHoveredSource(hitTest && {
+				source: hitTest.source,
+				object: hitTest.object,
+				cursorStyle: hitTest.cursorStyle || null,
+				itemType: hitTest.itemType,
+			});
 			this._crosshairMoved.fire(this._crosshair.appliedIndex(), { x, y }, event);
 		}
 	}

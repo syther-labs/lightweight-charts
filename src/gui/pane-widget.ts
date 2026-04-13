@@ -273,6 +273,7 @@ export class PaneWidget implements IDestroyable, MouseEventHandlers {
 			return;
 		}
 		this._onMouseEvent();
+		this._setCrosshairPosition(event.localX, event.localY, event);
 		this._fireClickedDelegate(event);
 	}
 
@@ -580,7 +581,7 @@ export class PaneWidget implements IDestroyable, MouseEventHandlers {
 
 	private _drawSources(target: CanvasRenderingTarget2D, paneViewsGetter: ViewsGetter<IDataSourcePaneViews>): void {
 		const state = ensureNotNull(this._state);
-		const sources = state.orderedSources();
+		const sources = state.orderedSourcesForRendering();
 
 		const panePrimitives = state.primitives();
 		for (const panePrimitive of panePrimitives) {

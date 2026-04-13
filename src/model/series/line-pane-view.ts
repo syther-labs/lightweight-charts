@@ -1,10 +1,11 @@
 import { BarPrice } from '../../model/bar';
 import { ISeriesBarColorer } from '../../model/series-bar-colorer';
-import { LinePaneViewBase } from '../../model/series/line-pane-view-base';
 import { TimePointIndex } from '../../model/time-data';
 import { LineStrokeItem, PaneRendererLine, PaneRendererLineData } from '../../renderers/line-renderer';
 
-export class SeriesLinePaneView extends LinePaneViewBase<'Line', LineStrokeItem, PaneRendererLine> {
+import { LineHitTestPaneViewBase } from './line-hit-test-pane-view-base';
+
+export class SeriesLinePaneView extends LineHitTestPaneViewBase<'Line', LineStrokeItem, PaneRendererLine> {
 	protected readonly _renderer: PaneRendererLine = new PaneRendererLine();
 
 	protected _createRawItem(time: TimePointIndex, price: BarPrice, colorer: ISeriesBarColorer<'Line'>): LineStrokeItem {

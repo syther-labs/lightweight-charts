@@ -7,9 +7,9 @@ import { BaselineFillItem, PaneRendererBaselineArea } from '../../renderers/base
 import { BaselineStrokeItem, PaneRendererBaselineLine } from '../../renderers/baseline-renderer-line';
 import { CompositeRenderer } from '../../renderers/composite-renderer';
 
-import { LinePaneViewBase } from './line-pane-view-base';
+import { LineHitTestPaneViewBase } from './line-hit-test-pane-view-base';
 
-export class SeriesBaselinePaneView extends LinePaneViewBase<'Baseline', BaselineFillItem & BaselineStrokeItem, CompositeRenderer> {
+export class SeriesBaselinePaneView extends LineHitTestPaneViewBase<'Baseline', BaselineFillItem & BaselineStrokeItem, CompositeRenderer> {
 	protected readonly _renderer: CompositeRenderer = new CompositeRenderer();
 	private readonly _baselineAreaRenderer: PaneRendererBaselineArea = new PaneRendererBaselineArea();
 	private readonly _baselineLineRenderer: PaneRendererBaselineLine = new PaneRendererBaselineLine();

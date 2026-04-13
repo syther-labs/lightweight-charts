@@ -63,6 +63,43 @@
 				return res;
 			}
 
+			function dispatchPointerAt(element, x, y) {
+				const rect = element.getBoundingClientRect();
+				const eventInit = {
+					clientX: rect.left + x,
+					clientY: rect.top + y,
+					bubbles: true,
+					cancelable: true,
+					view: window,
+				};
+
+				element.dispatchEvent(new MouseEvent('mousemove', eventInit));
+				element.dispatchEvent(new MouseEvent('mousedown', eventInit));
+				element.dispatchEvent(new MouseEvent('mouseup', eventInit));
+				element.dispatchEvent(new MouseEvent('click', eventInit));
+			}
+
+			function interactivePaneElement(paneElement) {
+				return paneElement ? paneElement.querySelector('canvas:last-of-type') || paneElement : null;
+			}
+
+			function waitForNextFrame(delay = 0) {
+				return new Promise(resolve => {
+					requestAnimationFrame(() => {
+						setTimeout(resolve, delay);
+					});
+				});
+			}
+
+			async function dispatchTargetSequence(targets) {
+				for (const target of targets) {
+					if (target.pane !== null) {
+						dispatchPointerAt(target.pane, target.x, target.y);
+						await waitForNextFrame(20);
+					}
+				}
+			}
+
 			TEST_CASE_SCRIPT
 		</script>
 

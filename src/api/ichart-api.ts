@@ -1,6 +1,6 @@
 import { DeepPartial } from '../helpers/strict-type-checks';
 
-import { ChartOptionsImpl } from '../model/chart-model';
+import { ChartOptionsImpl, HoveredItemType } from '../model/chart-model';
 import { BarData, HistogramData, LineData, WhitespaceData } from '../model/data-consumer';
 import { Time } from '../model/horz-scale-behavior-time/types';
 import { CustomData, ICustomSeriesPaneView } from '../model/icustom-series';
@@ -33,8 +33,39 @@ export interface PaneSize {
 }
 
 /**
- * Represents a mouse event.
+ * Represents rich information about the hovered chart object.
  */
+export interface HoveredInfo<HorzScaleItem = Time> {
+	/**
+	 * The semantic kind of hovered item.
+	 *
+	 * Prefer this when you want to know what kind of geometry the cursor is over.
+	 */
+	type: HoveredItemType;
+	/**
+	 * The kind of source that owns the hovered target.
+	 *
+	 * Prefer this when you want ownership information about the hovered object.
+	 */
+	sourceKind: 'series' | 'series-primitive' | 'pane-primitive';
+	/**
+	 * The kind of hovered target object.
+	 */
+	objectKind: 'series' | 'custom-object' | 'custom-price-line' | 'series-marker' | 'primitive';
+	/**
+	 * The series that owns the hovered item, if any.
+	 */
+	series?: ISeriesApi<SeriesType, HorzScaleItem>;
+	/**
+	 * The object id associated with the hovered item, if any.
+	 */
+	objectId?: unknown;
+	/**
+	 * The pane index where the hover was resolved.
+	 */
+	paneIndex?: number;
+}
+
 export interface MouseEventParams<HorzScaleItem = Time> {
 	/**
 	 * Time of the data at the location of the mouse event.
@@ -64,11 +95,19 @@ export interface MouseEventParams<HorzScaleItem = Time> {
 	 */
 	seriesData: Map<ISeriesApi<SeriesType, HorzScaleItem>, BarData<HorzScaleItem> | LineData<HorzScaleItem> | HistogramData<HorzScaleItem> | CustomData<HorzScaleItem>>;
 	/**
+	 * Rich information about the hovered item and its owner.
+	 */
+	hoveredInfo?: HoveredInfo<HorzScaleItem>;
+	/**
 	 * The {@link ISeriesApi} for the series at the point of the mouse event.
+	 *
+	 * @deprecated Use `hoveredInfo.series` instead.
 	 */
 	hoveredSeries?: ISeriesApi<SeriesType, HorzScaleItem>;
 	/**
 	 * The ID of the object at the point of the mouse event.
+	 *
+	 * @deprecated Use `hoveredInfo.objectId` instead.
 	 */
 	hoveredObjectId?: unknown;
 	/**

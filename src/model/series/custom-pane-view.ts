@@ -2,14 +2,17 @@ import { CanvasRenderingTarget2D } from 'fancy-canvas';
 
 import { undefinedIfNull } from '../../helpers/strict-type-checks';
 
+import { Coordinate } from '../../model/coordinate';
+import { HitTestPriority, InternalHitTestCandidate } from '../../model/internal-hit-test';
 import { IPaneRenderer } from '../../renderers/ipane-renderer';
+import { hitTestSeriesRange } from '../../renderers/range-hit-test';
 
 import { IChartModelBase } from '../chart-model';
-import { Coordinate } from '../coordinate';
 import {
 	CustomBarItemData,
 	CustomConflationContext,
 	CustomData,
+	CustomSeriesHitTestResult,
 	CustomSeriesPricePlotValues,
 	CustomSeriesWhitespaceData,
 	ICustomSeriesPaneRenderer,
@@ -33,8 +36,9 @@ interface CustomBarItem extends CustomBarItemBase {
 }
 
 class CustomSeriesPaneRendererWrapper implements IPaneRenderer {
-	private _sourceRenderer: ICustomSeriesPaneRenderer;
-	private _priceScale: PriceToCoordinateConverter;
+	private readonly _sourceRenderer: ICustomSeriesPaneRenderer;
+	private readonly _priceScale: PriceToCoordinateConverter;
+
 	public constructor(
 		sourceRenderer: ICustomSeriesPaneRenderer,
 		priceScale: PriceToCoordinateConverter
@@ -52,6 +56,32 @@ class CustomSeriesPaneRendererWrapper implements IPaneRenderer {
 	}
 }
 
+function customHitPriority(type: CustomSeriesHitTestResult['type']): HitTestPriority {
+	switch (type) {
+		case 'point':
+			return HitTestPriority.Point;
+		case 'range':
+			return HitTestPriority.Range;
+		case 'line':
+		case 'custom':
+		default:
+			return HitTestPriority.Line;
+	}
+}
+
+function normalizeCustomHit(
+	result: CustomSeriesHitTestResult
+): InternalHitTestCandidate {
+	return {
+		distance: result.distance,
+		priority: customHitPriority(result.type),
+		itemType: 'custom',
+		cursorStyle: result.cursorStyle,
+		externalId: result.objectId,
+		hitTestData: result.hitTestData,
+	};
+}
+
 export class SeriesCustomPaneView extends SeriesPaneViewBase<
 	'Custom'& keyof SeriesOptionsMap,
 	CustomBarItem,
@@ -59,6 +89,7 @@ export class SeriesCustomPaneView extends SeriesPaneViewBase<
 > implements ISeriesCustomPaneView {
 	protected readonly _renderer: CustomSeriesPaneRendererWrapper;
 	private readonly _paneView: ICustomSeriesPaneView<unknown>;
+	private readonly _sourceRenderer: ICustomSeriesPaneRenderer;
 
 	public constructor(
 		series: ISeries<'Custom' & keyof SeriesOptionsMap>,
@@ -67,15 +98,10 @@ export class SeriesCustomPaneView extends SeriesPaneViewBase<
 	) {
 		super(series, model, false);
 		this._paneView = paneView;
+		this._sourceRenderer = this._paneView.renderer();
 		this._renderer = new CustomSeriesPaneRendererWrapper(
-			this._paneView.renderer(),
-			(price: number) => {
-				const firstValue = series.firstValue();
-				if (firstValue === null) {
-					return null;
-				}
-				return series.priceScale().priceToCoordinate(price, firstValue.value);
-			}
+			this._sourceRenderer,
+			(price: number) => this._rendererPriceCoordinate(price)
 		);
 	}
 
@@ -90,6 +116,46 @@ export class SeriesCustomPaneView extends SeriesPaneViewBase<
 
 	public isWhitespace(data: CustomData<unknown> | CustomSeriesWhitespaceData<unknown>): data is CustomSeriesWhitespaceData<unknown> {
 		return this._paneView.isWhitespace(data);
+	}
+
+	protected override _hitTestImpl(x: Coordinate, y: Coordinate): InternalHitTestCandidate | null {
+		const customHit = this._sourceRenderer.hitTest?.(x, y, (price: number) => this._rendererPriceCoordinate(price));
+		if (customHit !== null && customHit !== undefined) {
+			return normalizeCustomHit(customHit);
+		}
+
+		const fallbackHit = hitTestSeriesRange(
+			this._items,
+			this._itemsVisibleRange,
+			x,
+			y,
+			this._model.timeScale().barSpacing(),
+			this._series.options().hitTestTolerance,
+			(bar: CustomBarItem, out: [Coordinate, Coordinate]) => {
+				const originalData = bar.originalData as unknown as CustomData<unknown> | CustomSeriesWhitespaceData<unknown> | undefined;
+				let top = NaN;
+				let bottom = NaN;
+
+				if (originalData !== undefined && !this._paneView.isWhitespace(originalData)) {
+					for (const price of this._paneView.priceValueBuilder(originalData)) {
+						const coordinate = this._rendererPriceCoordinate(price);
+						if (coordinate === null) {
+							continue;
+						}
+						top = Number.isNaN(top) ? coordinate : Math.min(top, coordinate);
+						bottom = Number.isNaN(bottom) ? coordinate : Math.max(bottom, coordinate);
+					}
+				}
+
+				out[0] = top as Coordinate;
+				out[1] = bottom as Coordinate;
+			}
+		);
+
+		return fallbackHit === null ? null : {
+			...fallbackHit,
+			itemType: 'custom',
+		};
 	}
 
 	protected _fillRawPoints(): void {
@@ -120,7 +186,7 @@ export class SeriesCustomPaneView extends SeriesPaneViewBase<
 	protected _prepareRendererData(): void {
 		this._paneView.update(
 			{
-				bars: this._items.map(unwrapItemData) as CustomBarItemData<unknown>[],
+				bars: this._items.map(unwrapItemData),
 				barSpacing: this._model.timeScale().barSpacing(),
 				visibleRange: this._itemsVisibleRange,
 				conflationFactor: this._model.timeScale().conflationFactor(),
@@ -128,15 +194,24 @@ export class SeriesCustomPaneView extends SeriesPaneViewBase<
 			this._series.options()
 		);
 	}
+
+	private _rendererPriceCoordinate(price: number): Coordinate | null {
+		const firstValue = this._series.firstValue();
+		if (firstValue === null) {
+			return null;
+		}
+
+		return this._series.priceScale().priceToCoordinate(price, firstValue.value);
+	}
 }
 
 function unwrapItemData(
 	item: CustomBarItem
-): Record<keyof CustomBarItem, unknown> {
+): CustomBarItemData<unknown> {
 	return {
 		x: item.x,
 		time: item.time,
-		originalData: item.originalData,
+		originalData: item.originalData as unknown as CustomData<unknown>,
 		barColor: item.barColor,
 	};
 }

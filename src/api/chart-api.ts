@@ -33,7 +33,7 @@ import { isSeriesDefinition, SeriesDefinition } from '../model/series/series-def
 import { Logical } from '../model/time-data';
 
 import { getSeriesDataCreator } from './get-series-data-creator';
-import { IChartApiBase, MouseEventHandler, MouseEventParams, PaneSize } from './ichart-api';
+import { HoveredInfo, IChartApiBase, MouseEventHandler, MouseEventParams, PaneSize } from './ichart-api';
 import { IPaneApi } from './ipane-api';
 import { IPriceScaleApi } from './iprice-scale-api';
 import { ISeriesApi } from './iseries-api';
@@ -422,6 +422,10 @@ export class ChartApi<HorzScaleItem> implements IChartApiBase<HorzScaleItem>, Da
 		return ensureDefined(this._seriesMapReversed.get(series));
 	}
 
+	private _resolveSeriesApi(series: Series<SeriesType> | undefined): ISeriesApi<SeriesType, HorzScaleItem> | undefined {
+		return series !== undefined && this._seriesMapReversed.has(series) ? this._mapSeriesToApi(series) : undefined;
+	}
+
 	private _convertMouseParams(param: MouseEventParamsImpl): MouseEventParams<HorzScaleItem> {
 		const seriesData: MouseEventParams<HorzScaleItem>['seriesData'] = new Map();
 		param.seriesData.forEach((plotRow: SeriesPlotRow<SeriesType>, series: Series<SeriesType>) => {
@@ -436,17 +440,24 @@ export class ChartApi<HorzScaleItem> implements IChartApiBase<HorzScaleItem>, Da
 			seriesData.set(this._mapSeriesToApi(series), data);
 		});
 
-		const hoveredSeries =
-			param.hoveredSeries === undefined ||
-			!this._seriesMapReversed.has(param.hoveredSeries)
-				? undefined
-				: this._mapSeriesToApi(param.hoveredSeries);
+		const hoveredSeries = this._resolveSeriesApi(param.hoveredSeries);
+		const hoveredInfo: HoveredInfo<HorzScaleItem> | undefined = param.hoveredInfo === undefined
+			? undefined
+			: {
+				type: param.hoveredInfo.type,
+				sourceKind: param.hoveredInfo.sourceKind,
+				objectKind: param.hoveredInfo.objectKind,
+				series: this._resolveSeriesApi(param.hoveredInfo.series),
+				objectId: param.hoveredInfo.objectId,
+				paneIndex: param.hoveredInfo.paneIndex,
+			};
 
 		return {
 			time: param.originalTime as HorzScaleItem,
 			logical: param.index as Logical | undefined,
 			point: param.point,
 			paneIndex: param.paneIndex,
+			hoveredInfo,
 			hoveredSeries,
 			hoveredObjectId: param.hoveredObject,
 			seriesData,
