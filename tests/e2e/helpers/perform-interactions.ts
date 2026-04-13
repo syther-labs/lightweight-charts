@@ -48,7 +48,7 @@ export type Interaction = {
 	action: InteractionAction;
 	target?: InteractionTarget;
 } & ({
-	action: Omit<InteractionAction, 'clickXY' | 'moveMouseXY'>;
+	action: Exclude<InteractionAction, 'clickXY' | 'moveMouseXY'>;
 	options: never;
 } | {
 	action: 'moveMouseXY';
