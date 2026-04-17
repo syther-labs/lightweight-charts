@@ -1102,11 +1102,15 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 	}
 
 	public defaultVisiblePriceScaleId(): string {
-		if (this._options.defaultVisiblePriceScaleId === DefaultPriceScaleId.Left) {
-			return this._options.leftPriceScale.visible ? DefaultPriceScaleId.Left : DefaultPriceScaleId.Right;
+		const preferredPriceScaleId = this._options.defaultVisiblePriceScaleId;
+		const leftVisible = this._options.leftPriceScale.visible;
+		const rightVisible = this._options.rightPriceScale.visible;
+
+		if (leftVisible !== rightVisible) {
+			return leftVisible ? DefaultPriceScaleId.Left : DefaultPriceScaleId.Right;
 		}
 
-		return this._options.rightPriceScale.visible ? DefaultPriceScaleId.Right : DefaultPriceScaleId.Left;
+		return preferredPriceScaleId;
 	}
 
 	public moveSeriesToPane(series: Series<SeriesType>, newPaneIndex: number): void {
