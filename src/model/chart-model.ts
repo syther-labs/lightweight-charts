@@ -306,6 +306,12 @@ export interface ChartOptionsBase {
 	 */
 	rightPriceScale: VisiblePriceScaleOptions;
 	/**
+	 * The visible price scale to prefer when the chart needs a default side while both left and right price scales are visible.
+	 *
+	 * @defaultValue `'right'`
+	 */
+	defaultVisiblePriceScaleId: 'left' | 'right';
+	/**
 	 * Overlay price scale options
 	 */
 	overlayPriceScales: OverlayPriceScaleOptions;
@@ -1096,6 +1102,10 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 	}
 
 	public defaultVisiblePriceScaleId(): string {
+		if (this._options.defaultVisiblePriceScaleId === DefaultPriceScaleId.Left) {
+			return this._options.leftPriceScale.visible ? DefaultPriceScaleId.Left : DefaultPriceScaleId.Right;
+		}
+
 		return this._options.rightPriceScale.visible ? DefaultPriceScaleId.Right : DefaultPriceScaleId.Left;
 	}
 
