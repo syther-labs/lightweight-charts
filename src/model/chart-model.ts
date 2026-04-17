@@ -306,7 +306,8 @@ export interface ChartOptionsBase {
 	 */
 	rightPriceScale: VisiblePriceScaleOptions;
 	/**
-	 * The visible price scale to prefer when the chart needs a default side while both left and right price scales are visible.
+	 * The price scale to prefer when the chart needs a default side and both left and right price scales
+	 * share the same visibility state (both visible or both hidden).
 	 *
 	 * @defaultValue `'right'`
 	 */
