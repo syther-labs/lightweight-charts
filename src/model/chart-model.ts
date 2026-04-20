@@ -308,6 +308,11 @@ export interface ChartOptionsBase {
 	/**
 	 * The price scale to prefer when the chart needs a default side and both left and right price scales
 	 * share the same visibility state (both visible or both hidden).
+	 * This affects behaviors that depend on the pane's default side, such as:
+	 * - horizontal grid lines
+	 * - overlay series label placement
+	 * - the price scale used when adding a series without an explicit `priceScaleId`
+	 * - crosshair price coordinate conversion and magnet snapping
 	 *
 	 * @defaultValue `'right'`
 	 */
