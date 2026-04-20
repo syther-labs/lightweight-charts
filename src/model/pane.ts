@@ -298,32 +298,36 @@ export class Pane implements IDestroyable, IPrimitiveHitTestSource {
 	}
 
 	public defaultPriceScale(): PriceScale {
+		const [primaryPriceScale, secondaryPriceScale] = this._defaultPriceScalePair();
 		let priceScale: PriceScale | null = null;
 
-		if (this._model.options().rightPriceScale.visible && this._rightPriceScale.dataSources().length !== 0) {
-			priceScale = this._rightPriceScale;
-		} else if (this._model.options().leftPriceScale.visible && this._leftPriceScale.dataSources().length !== 0) {
-			priceScale = this._leftPriceScale;
+		if (primaryPriceScale.options().visible && primaryPriceScale.dataSources().length !== 0) {
+			priceScale = primaryPriceScale;
+		} else if (secondaryPriceScale.options().visible && secondaryPriceScale.dataSources().length !== 0) {
+			priceScale = secondaryPriceScale;
 		} else if (this._dataSources.length !== 0) {
 			priceScale = this._dataSources[0].priceScale();
 		}
 
 		if (priceScale === null) {
-			priceScale = this._rightPriceScale;
+			priceScale = this.defaultVisiblePriceScale() ?? primaryPriceScale;
 		}
 
 		return priceScale;
 	}
 
 	public defaultVisiblePriceScale(): PriceScale | null {
-		let priceScale: PriceScale | null = null;
+		const [primaryPriceScale, secondaryPriceScale] = this._defaultPriceScalePair();
 
-		if (this._model.options().rightPriceScale.visible) {
-			priceScale = this._rightPriceScale;
-		} else if (this._model.options().leftPriceScale.visible) {
-			priceScale = this._leftPriceScale;
+		if (primaryPriceScale.options().visible) {
+			return primaryPriceScale;
 		}
-		return priceScale;
+
+		if (secondaryPriceScale.options().visible) {
+			return secondaryPriceScale;
+		}
+
+		return null;
 	}
 
 	public recalculatePriceScale(priceScale: PriceScale | null): void {
@@ -490,6 +494,12 @@ export class Pane implements IDestroyable, IPrimitiveHitTestSource {
 	private _invalidateSourceCaches(): void {
 		this._cachedOrderedSources = null;
 		this._cachedOrderedSourcesForRendering = null;
+	}
+
+	private _defaultPriceScalePair(): [PriceScale, PriceScale] {
+		return this._model.options().defaultVisiblePriceScaleId === DefaultPriceScaleId.Left
+			? [this._leftPriceScale, this._rightPriceScale]
+			: [this._rightPriceScale, this._leftPriceScale];
 	}
 
 	private _onPriceScaleModeChanged(priceScale: PriceScale, oldMode: PriceScaleState, newMode: PriceScaleState): void {

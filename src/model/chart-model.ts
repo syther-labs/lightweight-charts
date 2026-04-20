@@ -306,6 +306,18 @@ export interface ChartOptionsBase {
 	 */
 	rightPriceScale: VisiblePriceScaleOptions;
 	/**
+	 * The price scale to prefer when the chart needs a default side and both left and right price scales
+	 * share the same visibility state (both visible or both hidden).
+	 * This affects behaviors that depend on the pane's default side, such as:
+	 * - horizontal grid lines
+	 * - overlay series label placement
+	 * - the price scale used when adding a series without an explicit `priceScaleId`
+	 * - crosshair price coordinate conversion and magnet snapping
+	 *
+	 * @defaultValue `'right'`
+	 */
+	defaultVisiblePriceScaleId: 'left' | 'right';
+	/**
 	 * Overlay price scale options
 	 */
 	overlayPriceScales: OverlayPriceScaleOptions;
@@ -1096,7 +1108,15 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 	}
 
 	public defaultVisiblePriceScaleId(): string {
-		return this._options.rightPriceScale.visible ? DefaultPriceScaleId.Right : DefaultPriceScaleId.Left;
+		const preferredPriceScaleId = this._options.defaultVisiblePriceScaleId;
+		const leftVisible = this._options.leftPriceScale.visible;
+		const rightVisible = this._options.rightPriceScale.visible;
+
+		if (leftVisible !== rightVisible) {
+			return leftVisible ? DefaultPriceScaleId.Left : DefaultPriceScaleId.Right;
+		}
+
+		return preferredPriceScaleId;
 	}
 
 	public moveSeriesToPane(series: Series<SeriesType>, newPaneIndex: number): void {

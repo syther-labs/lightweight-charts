@@ -29,6 +29,7 @@ export function chartOptionsDefaults<HorzScaleItem>(): ChartOptionsInternal<Horz
 			...priceScaleOptionsDefaults,
 			visible: true,
 		},
+		defaultVisiblePriceScaleId: 'right',
 		timeScale: timeScaleOptionsDefaults,
 		localization: {
 			locale: isRunningOnClientSide ? navigator.language : '',
